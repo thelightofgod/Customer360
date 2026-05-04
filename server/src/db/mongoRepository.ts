@@ -167,7 +167,7 @@ export const mongoRepository = {
       initials: initials(c['Contact Name'] || ''),
       contact_type: (c['Contact Type'] || 'general').toLowerCase(),
       email: c['Email'] || null,
-      phone: null,
+      phone: c['Phone'] || null,
     }))
 
     const totalLicenses = subscriptions.filter(s => s.category === 'License').reduce((sum, s) => sum + s.quantity, 0)
@@ -345,6 +345,29 @@ export const mongoRepository = {
 
   async getActivities(_accountId?: string, _limit = 50): Promise<Activity[]> {
     return []
+  },
+
+  async updateContact(id: string, data: {
+    name?: string; role?: string; contactType?: string
+    email?: string; phone?: string; notes?: string
+  }): Promise<boolean> {
+    const update: Record<string, unknown> = {}
+    if (data.name !== undefined) update['Contact Name'] = data.name
+    if (data.role !== undefined) update['Role / Title'] = data.role
+    if (data.contactType !== undefined) update['Contact Type'] = data.contactType
+    if (data.email !== undefined) update['Email'] = data.email
+    if (data.phone !== undefined) update['Phone'] = data.phone
+    if (data.notes !== undefined) update['Notes'] = data.notes
+    const result = await getMongo().collection('Contacts').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: update }
+    )
+    return result.matchedCount === 1
+  },
+
+  async deleteContact(id: string): Promise<boolean> {
+    const result = await getMongo().collection('Contacts').deleteOne({ _id: new ObjectId(id) })
+    return result.deletedCount === 1
   },
 
   async deleteAccount(id: string): Promise<boolean> {

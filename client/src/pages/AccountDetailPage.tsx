@@ -14,7 +14,7 @@ import AddContactModal from '@/components/AddContactModal'
 import AddSubscriptionModal from '@/components/AddSubscriptionModal'
 import { api } from '@/lib/api'
 import { fmtCurrency, tierVariant, licenseModelVariant } from '@/lib/utils'
-import type { AccountDetail } from '@/types'
+import type { AccountDetail, Contact } from '@/types'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 
 export default function AccountDetailPage() {
@@ -24,12 +24,22 @@ export default function AccountDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showAddContact, setShowAddContact] = useState(false)
   const [showAddSub, setShowAddSub] = useState(false)
+  const [editingContact, setEditingContact] = useState<Contact | null>(null)
+
+  function refreshAccount() {
+    if (id) api.accounts.get(id).then(setAccount).catch(console.error)
+  }
 
   useEffect(() => {
     if (!id) return
     setLoading(true)
     api.accounts.get(id).then(setAccount).catch(console.error).finally(() => setLoading(false))
   }, [id])
+
+  async function handleDeleteContact(contactId: string) {
+    await api.contacts.delete(contactId)
+    refreshAccount()
+  }
 
   if (loading) {
     return (
@@ -53,7 +63,6 @@ export default function AccountDetailPage() {
   return (
     <>
     <Layout>
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-[var(--t4)] mb-4">
         <button onClick={() => navigate('/')} className="text-[var(--blue)] font-medium hover:underline cursor-pointer">
           Accounts
@@ -62,12 +71,10 @@ export default function AccountDetailPage() {
         <span>{account.name}</span>
       </div>
 
-      {/* Header card */}
       <div
         className="relative rounded-[16px] border border-[var(--brd)] overflow-hidden mb-6 p-6"
         style={{ background: `linear-gradient(135deg, ${account.color}18 0%, var(--bg3) 50%)` }}
       >
-        {/* Glow */}
         <div
           className="absolute top-0 left-0 w-64 h-64 rounded-full pointer-events-none"
           style={{ background: `radial-gradient(circle, ${account.color}22 0%, transparent 70%)`, transform: 'translate(-30%, -30%)' }}
@@ -118,7 +125,6 @@ export default function AccountDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -153,26 +159,41 @@ export default function AccountDetailPage() {
         <TabsContent value="overview"><OverviewTab account={account} /></TabsContent>
         <TabsContent value="subscriptions"><SubscriptionsTab account={account} onAdd={() => setShowAddSub(true)} /></TabsContent>
         <TabsContent value="tickets"><TicketsTab account={account} /></TabsContent>
-        <TabsContent value="contacts"><ContactsTab account={account} onAdd={() => setShowAddContact(true)} /></TabsContent>
+        <TabsContent value="contacts">
+          <ContactsTab
+            account={account}
+            onAdd={() => setShowAddContact(true)}
+            onEdit={setEditingContact}
+            onDelete={handleDeleteContact}
+          />
+        </TabsContent>
         <TabsContent value="activities"><ActivitiesTab account={account} /></TabsContent>
         <TabsContent value="notes"><NotesTab account={account} /></TabsContent>
       </Tabs>
     </Layout>
+
     <>
-    {showAddContact && (
-      <AddContactModal
-        prefilledAccount={{ id: account.id, name: account.name }}
-        onClose={() => setShowAddContact(false)}
-        onCreated={() => { setShowAddContact(false); api.accounts.get(id!).then(setAccount).catch(console.error) }}
-      />
-    )}
-    {showAddSub && (
-      <AddSubscriptionModal
-        prefilledAccount={{ id: account.id, name: account.name }}
-        onClose={() => setShowAddSub(false)}
-        onCreated={() => { setShowAddSub(false); api.accounts.get(id!).then(setAccount).catch(console.error) }}
-      />
-    )}
+      {showAddContact && (
+        <AddContactModal
+          prefilledAccount={{ id: account.id, name: account.name }}
+          onClose={() => setShowAddContact(false)}
+          onSaved={() => { setShowAddContact(false); refreshAccount() }}
+        />
+      )}
+      {editingContact && (
+        <AddContactModal
+          initialData={editingContact}
+          onClose={() => setEditingContact(null)}
+          onSaved={() => { setEditingContact(null); refreshAccount() }}
+        />
+      )}
+      {showAddSub && (
+        <AddSubscriptionModal
+          prefilledAccount={{ id: account.id, name: account.name }}
+          onClose={() => setShowAddSub(false)}
+          onCreated={() => { setShowAddSub(false); refreshAccount() }}
+        />
+      )}
     </>
     </>
   )

@@ -25,4 +25,24 @@ router.post('/', async (req, res) => {
   }
 })
 
+router.patch('/:id', async (req, res) => {
+  try {
+    const ok = await repo.updateContact(req.params.id, req.body)
+    if (!ok) return res.status(404).json({ error: 'Contact not found' })
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: String(e) })
+  }
+})
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const ok = await repo.deleteContact(req.params.id)
+    if (!ok) return res.status(404).json({ error: 'Contact not found' })
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: String(e) })
+  }
+})
+
 export default router

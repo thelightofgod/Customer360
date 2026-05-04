@@ -3,12 +3,13 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
-import type { Account } from '@/types'
+import type { Account, Contact } from '@/types'
 
 interface Props {
   onClose: () => void
-  onCreated: () => void
+  onSaved: () => void
   prefilledAccount?: { id: string; name: string }
+  initialData?: Contact
 }
 
 const TYPES = ['Sponsor', 'Technical', 'Business', 'Admin', 'General']
@@ -25,20 +26,28 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-export default function AddContactModal({ onClose, onCreated, prefilledAccount }: Props) {
+export default function AddContactModal({ onClose, onSaved, prefilledAccount, initialData }: Props) {
+  const isEdit = !!initialData
   const [accounts, setAccounts] = useState<Account[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
-    accountName: prefilledAccount?.name || '',
-    name: '', role: '', contactType: 'Sponsor', email: '', phone: '', notes: '',
+    accountName: initialData?.account_name || prefilledAccount?.name || '',
+    name: initialData?.name || '',
+    role: initialData?.role || '',
+    contactType: initialData?.contact_type
+      ? initialData.contact_type.charAt(0).toUpperCase() + initialData.contact_type.slice(1)
+      : 'Sponsor',
+    email: initialData?.email || '',
+    phone: initialData?.phone || '',
+    notes: '',
   })
 
   useEffect(() => {
-    if (!prefilledAccount) {
+    if (!prefilledAccount && !isEdit) {
       api.accounts.list({ filter: 'active' }).then(d => setAccounts(d.accounts)).catch(console.error)
     }
-  }, [prefilledAccount])
+  }, [prefilledAccount, isEdit])
 
   function set(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
@@ -50,16 +59,26 @@ export default function AddContactModal({ onClose, onCreated, prefilledAccount }
     if (!form.name.trim()) { setError('Contact name is required'); return }
     setSaving(true); setError('')
     try {
-      await api.contacts.create({
-        accountName: form.accountName,
-        name: form.name.trim(),
-        role: form.role,
-        contactType: form.contactType,
-        email: form.email || undefined,
-        phone: form.phone || undefined,
-        notes: form.notes || undefined,
-      })
-      onCreated()
+      if (isEdit) {
+        await api.contacts.update(initialData!.id, {
+          name: form.name.trim(),
+          role: form.role,
+          contactType: form.contactType,
+          email: form.email || '',
+          phone: form.phone || '',
+        })
+      } else {
+        await api.contacts.create({
+          accountName: form.accountName,
+          name: form.name.trim(),
+          role: form.role,
+          contactType: form.contactType,
+          email: form.email || undefined,
+          phone: form.phone || undefined,
+          notes: form.notes || undefined,
+        })
+      }
+      onSaved()
     } catch (e) {
       setError(String(e))
     } finally {
@@ -73,9 +92,13 @@ export default function AddContactModal({ onClose, onCreated, prefilledAccount }
       <div className="relative ml-auto h-full w-full max-w-[480px] bg-[var(--bg2)] border-l border-[var(--brd)] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--brd)]">
           <div>
-            <h2 className="text-base font-bold text-[var(--t1)]">New Contact</h2>
+            <h2 className="text-base font-bold text-[var(--t1)]">{isEdit ? 'Edit Contact' : 'New Contact'}</h2>
             <p className="text-xs text-[var(--t4)] mt-0.5">
-              {prefilledAccount ? `Adding to ${prefilledAccount.name}` : 'Add a contact to an account'}
+              {isEdit
+                ? `Editing ${initialData!.name}`
+                : prefilledAccount
+                  ? `Adding to ${prefilledAccount.name}`
+                  : 'Add a contact to an account'}
             </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--t1)] hover:bg-[var(--bg3)] transition-colors">
@@ -85,9 +108,9 @@ export default function AddContactModal({ onClose, onCreated, prefilledAccount }
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
           <Field label="Account" required>
-            {prefilledAccount ? (
+            {isEdit || prefilledAccount ? (
               <div className="h-9 flex items-center px-3 rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)]/50 text-sm text-[var(--t2)]">
-                {prefilledAccount.name}
+                {form.accountName}
               </div>
             ) : (
               <select className={selectClass} value={form.accountName} onChange={e => set('accountName', e.target.value)}>
@@ -121,15 +144,17 @@ export default function AddContactModal({ onClose, onCreated, prefilledAccount }
             </Field>
           </div>
 
-          <Field label="Notes">
-            <textarea
-              value={form.notes}
-              onChange={e => set('notes', e.target.value)}
-              rows={3}
-              placeholder="Optional notes..."
-              className="w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-2 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none focus:border-[var(--blue)] transition-colors resize-none"
-            />
-          </Field>
+          {!isEdit && (
+            <Field label="Notes">
+              <textarea
+                value={form.notes}
+                onChange={e => set('notes', e.target.value)}
+                rows={3}
+                placeholder="Optional notes..."
+                className="w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-2 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none focus:border-[var(--blue)] transition-colors resize-none"
+              />
+            </Field>
+          )}
 
           {error && <p className="text-xs text-[var(--red)] bg-[var(--red)]/10 rounded-lg px-3 py-2">{error}</p>}
         </form>
@@ -137,7 +162,7 @@ export default function AddContactModal({ onClose, onCreated, prefilledAccount }
         <div className="px-6 py-4 border-t border-[var(--brd)] flex justify-end gap-2">
           <Button type="button" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button variant="primary" onClick={handleSubmit as any} disabled={saving}>
-            {saving ? 'Saving…' : 'Add Contact'}
+            {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Contact'}
           </Button>
         </div>
       </div>

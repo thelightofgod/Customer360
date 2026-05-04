@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
 import type { Contact } from '@/types'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 
 const TYPE_VARIANTS: Record<string, 'purple' | 'blue' | 'green' | 'muted'> = {
   sponsor: 'purple', technical: 'blue', business: 'green', admin: 'muted',
@@ -16,6 +16,8 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   function fetchContacts() {
@@ -24,6 +26,12 @@ export default function ContactsPage() {
   }
 
   useEffect(() => { fetchContacts() }, [])
+
+  async function handleDelete(id: string) {
+    await api.contacts.delete(id)
+    setDeletingId(null)
+    fetchContacts()
+  }
 
   const filtered = search
     ? contacts.filter(c =>
@@ -60,7 +68,7 @@ export default function ContactsPage() {
           <div className="col-span-3 text-center py-16 text-[var(--t4)]">No contacts found</div>
         )}
         {filtered.map(c => (
-          <div key={c.id} className="bg-[var(--bg3)] border border-[var(--brd)] rounded-[14px] p-4 hover:border-[var(--brd2)] transition-colors">
+          <div key={c.id} className="bg-[var(--bg3)] border border-[var(--brd)] rounded-[14px] p-4 hover:border-[var(--brd2)] transition-colors flex flex-col">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-11 h-11 rounded-full bg-[var(--purple-bg)] flex items-center justify-center text-sm font-bold text-[var(--purple)] flex-shrink-0">
                 {c.initials}
@@ -73,22 +81,61 @@ export default function ContactsPage() {
                 {c.contact_type}
               </Badge>
             </div>
+
             {c.account_name && (
               <div className="text-[11px] text-[var(--t4)] bg-[var(--bg2)] rounded-[8px] px-2.5 py-1.5 mb-2 truncate">
                 {c.account_name}
               </div>
             )}
+
             {(c.email || c.phone) && (
-              <div className="space-y-1">
+              <div className="space-y-1 mb-3">
                 {c.email && <div className="text-xs text-[var(--t4)] truncate">{c.email}</div>}
                 {c.phone && <div className="text-xs text-[var(--t4)]">{c.phone}</div>}
               </div>
             )}
+
+            <div className="mt-auto pt-3 border-t border-white/[0.04] flex items-center justify-end gap-2">
+              {deletingId === c.id ? (
+                <>
+                  <span className="text-xs text-[var(--t4)] mr-1">Delete?</span>
+                  <button onClick={() => handleDelete(c.id)} className="text-xs text-[var(--red)] hover:underline font-medium">Confirm</button>
+                  <button onClick={() => setDeletingId(null)} className="text-xs text-[var(--t4)] hover:underline">Cancel</button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setEditingContact(c)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--t1)] hover:bg-[var(--bg2)] transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeletingId(c.id)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--red)] hover:bg-[var(--red)]/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>
 
-      {showAdd && <AddContactModal onClose={() => setShowAdd(false)} onCreated={() => { setShowAdd(false); fetchContacts() }} />}
+      {showAdd && (
+        <AddContactModal
+          onClose={() => setShowAdd(false)}
+          onSaved={() => { setShowAdd(false); fetchContacts() }}
+        />
+      )}
+      {editingContact && (
+        <AddContactModal
+          initialData={editingContact}
+          onClose={() => setEditingContact(null)}
+          onSaved={() => { setEditingContact(null); fetchContacts() }}
+        />
+      )}
     </Layout>
   )
 }
