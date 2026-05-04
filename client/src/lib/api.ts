@@ -22,6 +22,9 @@ export const api = {
     summary: () => get<AccountSummaryStats>('/api/accounts/summary'),
     get: (id: string) => get<AccountDetail>(`/api/accounts/${id}`),
     create: (body: Record<string, unknown>) => post('/api/accounts', body),
+    update: (id: string, body: Record<string, unknown>) =>
+      fetch(`/api/accounts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),
     delete: (id: string) =>
       fetch(`/api/accounts/${id}`, { method: 'DELETE' })
         .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),

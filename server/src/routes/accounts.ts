@@ -45,6 +45,16 @@ router.patch('/:id/notes', async (req, res) => {
   }
 })
 
+router.patch('/:id', async (req, res) => {
+  try {
+    const ok = await repo.updateAccount(req.params.id, req.body)
+    if (!ok) return res.status(404).json({ error: 'Account not found' })
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: String(e) })
+  }
+})
+
 router.delete('/:id', async (req, res) => {
   try {
     const ok = await repo.deleteAccount(req.params.id)

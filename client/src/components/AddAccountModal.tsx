@@ -3,10 +3,12 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
+import type { AccountDetail } from '@/types'
 
 interface Props {
   onClose: () => void
   onCreated: () => void
+  initialData?: AccountDetail
 }
 
 const TIERS = ['Strategic', 'Growth', 'Core', 'New Logo']
@@ -27,13 +29,24 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 const selectClass = 'h-9 w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 text-sm text-[var(--t1)] focus:outline-none focus:border-[var(--blue)] transition-colors appearance-none cursor-pointer'
 
-export default function AddAccountModal({ onClose, onCreated }: Props) {
+export default function AddAccountModal({ onClose, onCreated, initialData }: Props) {
+  const isEdit = !!initialData
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
-    name: '', sector: '', tier: 'Growth', edition: 'Qlik Cloud Business',
-    licenseModel: '', csm: '', contractStart: '', renewalDate: '',
-    arr: '', nps: '', slaCompliance: '', avgResolution: '', notes: '',
+    name: initialData?.name || '',
+    sector: initialData?.sector || '',
+    tier: initialData?.tier || 'Growth',
+    edition: initialData?.edition || 'Qlik Cloud Business',
+    licenseModel: initialData?.license_model || '',
+    csm: initialData?.csm || '',
+    contractStart: initialData?.contract_start || '',
+    renewalDate: initialData?.renewal_date || '',
+    arr: initialData?.arr != null ? String(initialData.arr) : '',
+    nps: initialData?.nps != null ? String(initialData.nps) : '',
+    slaCompliance: initialData?.sla_compliance != null ? String(initialData.sla_compliance) : '',
+    avgResolution: initialData?.avg_resolution || '',
+    notes: initialData?.notes || '',
   })
 
   function set(field: string, value: string) {
@@ -42,25 +55,42 @@ export default function AddAccountModal({ onClose, onCreated }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.name.trim()) { setError('Account name is required'); return }
+    if (!isEdit && !form.name.trim()) { setError('Account name is required'); return }
     setSaving(true)
     setError('')
     try {
-      await api.accounts.create({
-        name: form.name.trim(),
-        sector: form.sector,
-        tier: form.tier,
-        edition: form.edition,
-        licenseModel: form.licenseModel || null,
-        csm: form.csm,
-        contractStart: form.contractStart || undefined,
-        renewalDate: form.renewalDate || undefined,
-        arr: form.arr ? Number(form.arr) : 0,
-        nps: form.nps ? Number(form.nps) : null,
-        slaCompliance: form.slaCompliance ? Number(form.slaCompliance) : null,
-        avgResolution: form.avgResolution || undefined,
-        notes: form.notes || undefined,
-      })
+      if (isEdit) {
+        await api.accounts.update(initialData!.id, {
+          sector: form.sector,
+          tier: form.tier,
+          edition: form.edition,
+          licenseModel: form.licenseModel || null,
+          csm: form.csm,
+          contractStart: form.contractStart || undefined,
+          renewalDate: form.renewalDate || undefined,
+          arr: form.arr ? Number(form.arr) : 0,
+          nps: form.nps ? Number(form.nps) : null,
+          slaCompliance: form.slaCompliance ? Number(form.slaCompliance) : null,
+          avgResolution: form.avgResolution || undefined,
+          notes: form.notes || undefined,
+        })
+      } else {
+        await api.accounts.create({
+          name: form.name.trim(),
+          sector: form.sector,
+          tier: form.tier,
+          edition: form.edition,
+          licenseModel: form.licenseModel || null,
+          csm: form.csm,
+          contractStart: form.contractStart || undefined,
+          renewalDate: form.renewalDate || undefined,
+          arr: form.arr ? Number(form.arr) : 0,
+          nps: form.nps ? Number(form.nps) : null,
+          slaCompliance: form.slaCompliance ? Number(form.slaCompliance) : null,
+          avgResolution: form.avgResolution || undefined,
+          notes: form.notes || undefined,
+        })
+      }
       onCreated()
     } catch (e) {
       setError(String(e))
@@ -71,33 +101,36 @@ export default function AddAccountModal({ onClose, onCreated }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Drawer */}
       <div className="relative ml-auto h-full w-full max-w-[520px] bg-[var(--bg2)] border-l border-[var(--brd)] flex flex-col shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--brd)]">
           <div>
-            <h2 className="text-base font-bold text-[var(--t1)]">New Account</h2>
-            <p className="text-xs text-[var(--t4)] mt-0.5">Add a new customer or prospect</p>
+            <h2 className="text-base font-bold text-[var(--t1)]">{isEdit ? 'Edit Account' : 'New Account'}</h2>
+            <p className="text-xs text-[var(--t4)] mt-0.5">
+              {isEdit ? `Editing ${initialData!.name}` : 'Add a new customer or prospect'}
+            </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--t1)] hover:bg-[var(--bg3)] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-          {/* Section: Basic */}
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.8px] text-[var(--t4)] mb-3 flex items-center gap-2">
               <div className="w-1 h-3 rounded-full bg-[var(--blue)]" /> Basic Info
             </div>
             <div className="space-y-3">
-              <Field label="Account Name" required>
-                <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Trendyol" autoFocus />
+              <Field label="Account Name" required={!isEdit}>
+                {isEdit ? (
+                  <div className="h-9 flex items-center px-3 rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)]/50 text-sm text-[var(--t2)]">
+                    {form.name}
+                  </div>
+                ) : (
+                  <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Trendyol" autoFocus />
+                )}
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Sector / Industry">
@@ -131,7 +164,6 @@ export default function AddAccountModal({ onClose, onCreated }: Props) {
             </div>
           </div>
 
-          {/* Section: Contract */}
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.8px] text-[var(--t4)] mb-3 flex items-center gap-2">
               <div className="w-1 h-3 rounded-full bg-[var(--green)]" /> Contract
@@ -151,7 +183,6 @@ export default function AddAccountModal({ onClose, onCreated }: Props) {
             </div>
           </div>
 
-          {/* Section: Performance */}
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.8px] text-[var(--t4)] mb-3 flex items-center gap-2">
               <div className="w-1 h-3 rounded-full bg-[var(--purple)]" /> Performance
@@ -171,7 +202,6 @@ export default function AddAccountModal({ onClose, onCreated }: Props) {
             </div>
           </div>
 
-          {/* Notes */}
           <Field label="Notes">
             <textarea
               value={form.notes}
@@ -185,11 +215,10 @@ export default function AddAccountModal({ onClose, onCreated }: Props) {
           {error && <p className="text-xs text-[var(--red)] bg-[var(--red)]/10 rounded-lg px-3 py-2">{error}</p>}
         </form>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-[var(--brd)] flex justify-end gap-2">
           <Button type="button" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button variant="primary" onClick={handleSubmit as any} disabled={saving}>
-            {saving ? 'Saving…' : 'Create Account'}
+            {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Account'}
           </Button>
         </div>
       </div>

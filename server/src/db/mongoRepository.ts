@@ -397,6 +397,31 @@ export const mongoRepository = {
     return result.deletedCount === 1
   },
 
+  async updateAccount(id: string, data: {
+    sector?: string; tier?: string; edition?: string; licenseModel?: string
+    csm?: string; contractStart?: string; renewalDate?: string; arr?: number
+    nps?: number | null; slaCompliance?: number | null; avgResolution?: string; notes?: string
+  }): Promise<boolean> {
+    const update: Record<string, unknown> = {}
+    if (data.sector !== undefined) update['Sector / Industry'] = data.sector
+    if (data.tier !== undefined) update['Tier'] = data.tier
+    if (data.edition !== undefined) update['Edition'] = data.edition
+    if (data.licenseModel !== undefined) update['License Model'] = data.licenseModel || null
+    if (data.csm !== undefined) update['CSM Assigned'] = data.csm
+    if (data.contractStart !== undefined) update['Contract Start'] = data.contractStart ? new Date(data.contractStart) : null
+    if (data.renewalDate !== undefined) update['Renewal Date'] = data.renewalDate ? new Date(data.renewalDate) : null
+    if (data.arr !== undefined) update['ARR (€)'] = String(data.arr)
+    if (data.nps !== undefined) update['NPS (1-10)'] = data.nps
+    if (data.slaCompliance !== undefined) update['SLA Compliance %'] = data.slaCompliance
+    if (data.avgResolution !== undefined) update['Avg Resolution'] = data.avgResolution
+    if (data.notes !== undefined) update['Notes'] = data.notes
+    const result = await getMongo().collection('Accounts').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: update }
+    )
+    return result.matchedCount === 1
+  },
+
   async deleteAccount(id: string): Promise<boolean> {
     const db = getMongo()
     const doc = await db.collection('Accounts').findOne({ _id: new ObjectId(id) })

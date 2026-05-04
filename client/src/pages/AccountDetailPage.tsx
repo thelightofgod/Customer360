@@ -15,7 +15,8 @@ import AddSubscriptionModal from '@/components/AddSubscriptionModal'
 import { api } from '@/lib/api'
 import { fmtCurrency, tierVariant, licenseModelVariant } from '@/lib/utils'
 import type { AccountDetail, Contact, SubscriptionDetail } from '@/types'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import AddAccountModal from '@/components/AddAccountModal'
+import { ArrowLeft, ExternalLink, Pencil } from 'lucide-react'
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -26,6 +27,7 @@ export default function AccountDetailPage() {
   const [showAddSub, setShowAddSub] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [editingSub, setEditingSub] = useState<SubscriptionDetail | null>(null)
+  const [showEditAccount, setShowEditAccount] = useState(false)
 
   function refreshAccount() {
     if (id) api.accounts.get(id).then(setAccount).catch(console.error)
@@ -124,6 +126,9 @@ export default function AccountDetailPage() {
             <Button onClick={() => navigate('/')}>
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </Button>
+            <Button onClick={() => setShowEditAccount(true)}>
+              <Pencil className="w-3.5 h-3.5" /> Edit
+            </Button>
             <Button variant="primary">
               <ExternalLink className="w-3.5 h-3.5" /> Open in Qlik
             </Button>
@@ -186,6 +191,13 @@ export default function AccountDetailPage() {
     </Layout>
 
     <>
+      {showEditAccount && (
+        <AddAccountModal
+          initialData={account}
+          onClose={() => setShowEditAccount(false)}
+          onCreated={() => { setShowEditAccount(false); refreshAccount() }}
+        />
+      )}
       {showAddContact && (
         <AddContactModal
           prefilledAccount={{ id: account.id, name: account.name }}
