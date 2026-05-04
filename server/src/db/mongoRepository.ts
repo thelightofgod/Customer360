@@ -398,7 +398,15 @@ export const mongoRepository = {
   },
 
   async deleteAccount(id: string): Promise<boolean> {
-    const result = await getMongo().collection('Accounts').deleteOne({ _id: new ObjectId(id) })
+    const db = getMongo()
+    const doc = await db.collection('Accounts').findOne({ _id: new ObjectId(id) })
+    if (!doc) return false
+    const name: string = doc['Account Name']
+    await Promise.all([
+      db.collection('Contacts').deleteMany({ 'Account Name': name }),
+      db.collection('Subscriptions').deleteMany({ 'Account Name': name }),
+    ])
+    const result = await db.collection('Accounts').deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount === 1
   },
 
