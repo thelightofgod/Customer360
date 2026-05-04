@@ -14,7 +14,7 @@ import AddContactModal from '@/components/AddContactModal'
 import AddSubscriptionModal from '@/components/AddSubscriptionModal'
 import { api } from '@/lib/api'
 import { fmtCurrency, tierVariant, licenseModelVariant } from '@/lib/utils'
-import type { AccountDetail, Contact } from '@/types'
+import type { AccountDetail, Contact, SubscriptionDetail } from '@/types'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 
 export default function AccountDetailPage() {
@@ -25,6 +25,7 @@ export default function AccountDetailPage() {
   const [showAddContact, setShowAddContact] = useState(false)
   const [showAddSub, setShowAddSub] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  const [editingSub, setEditingSub] = useState<SubscriptionDetail | null>(null)
 
   function refreshAccount() {
     if (id) api.accounts.get(id).then(setAccount).catch(console.error)
@@ -38,6 +39,11 @@ export default function AccountDetailPage() {
 
   async function handleDeleteContact(contactId: string) {
     await api.contacts.delete(contactId)
+    refreshAccount()
+  }
+
+  async function handleDeleteSub(subId: string) {
+    await api.subscriptions.delete(subId)
     refreshAccount()
   }
 
@@ -157,7 +163,14 @@ export default function AccountDetailPage() {
         </TabsList>
 
         <TabsContent value="overview"><OverviewTab account={account} /></TabsContent>
-        <TabsContent value="subscriptions"><SubscriptionsTab account={account} onAdd={() => setShowAddSub(true)} /></TabsContent>
+        <TabsContent value="subscriptions">
+          <SubscriptionsTab
+            account={account}
+            onAdd={() => setShowAddSub(true)}
+            onEdit={setEditingSub}
+            onDelete={handleDeleteSub}
+          />
+        </TabsContent>
         <TabsContent value="tickets"><TicketsTab account={account} /></TabsContent>
         <TabsContent value="contacts">
           <ContactsTab
@@ -192,6 +205,13 @@ export default function AccountDetailPage() {
           prefilledAccount={{ id: account.id, name: account.name }}
           onClose={() => setShowAddSub(false)}
           onCreated={() => { setShowAddSub(false); refreshAccount() }}
+        />
+      )}
+      {editingSub && (
+        <AddSubscriptionModal
+          initialData={editingSub}
+          onClose={() => setEditingSub(null)}
+          onCreated={() => { setEditingSub(null); refreshAccount() }}
         />
       )}
     </>

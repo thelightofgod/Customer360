@@ -29,6 +29,12 @@ export const api = {
   subscriptions: {
     list: () => get<{ subscriptions: SubscriptionDetail[]; total: number }>('/api/subscriptions'),
     create: (body: Record<string, unknown>) => post('/api/subscriptions', body),
+    update: (id: string, body: Record<string, unknown>) =>
+      fetch(`/api/subscriptions/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),
+    delete: (id: string) =>
+      fetch(`/api/subscriptions/${id}`, { method: 'DELETE' })
+        .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),
   },
   contacts: {
     list: (accountId?: string) =>

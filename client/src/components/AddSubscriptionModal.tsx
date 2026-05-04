@@ -3,12 +3,13 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
-import type { Account, Product } from '@/types'
+import type { Account, Product, SubscriptionDetail } from '@/types'
 
 interface Props {
   onClose: () => void
   onCreated: () => void
   prefilledAccount?: { id: string; name: string }
+  initialData?: SubscriptionDetail
 }
 
 const selectClass = 'h-9 w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 text-sm text-[var(--t1)] focus:outline-none focus:border-[var(--blue)] transition-colors appearance-none cursor-pointer'
@@ -24,22 +25,33 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-export default function AddSubscriptionModal({ onClose, onCreated, prefilledAccount }: Props) {
+export default function AddSubscriptionModal({ onClose, onCreated, prefilledAccount, initialData }: Props) {
+  const isEdit = !!initialData
   const [accounts, setAccounts] = useState<Account[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
-    accountName: prefilledAccount?.name || '',
-    productId: '', quantity: '1', unitPrice: '', notes: '',
+    accountName: initialData?.account_name || prefilledAccount?.name || '',
+    productId: '',
+    quantity: initialData ? String(initialData.quantity) : '1',
+    unitPrice: initialData ? String(initialData.unit_price) : '',
+    notes: '',
   })
 
   useEffect(() => {
-    api.products.list().then(d => setProducts(d.products)).catch(console.error)
-    if (!prefilledAccount) {
+    api.products.list().then(d => {
+      setProducts(d.products)
+      if (initialData) {
+        const match = d.products.find(p => p.name === initialData.product_name)
+        if (match) setForm(f => ({ ...f, productId: match.id }))
+      }
+    }).catch(console.error)
+
+    if (!prefilledAccount && !isEdit) {
       api.accounts.list({ filter: 'active' }).then(d => setAccounts(d.accounts)).catch(console.error)
     }
-  }, [prefilledAccount])
+  }, [])
 
   const selectedProduct = products.find(p => p.id === form.productId)
 
@@ -61,16 +73,27 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
     if (!form.quantity || !form.unitPrice) { setError('Quantity and unit price are required'); return }
     setSaving(true); setError('')
     try {
-      await api.subscriptions.create({
-        accountName: form.accountName,
-        productName: selectedProduct?.name || '',
-        category: selectedProduct?.category || '',
-        productGroup: selectedProduct?.product_group || '',
-        quantity: Number(form.quantity),
-        unit: selectedProduct?.unit_type || '',
-        unitPrice: Number(form.unitPrice),
-        notes: form.notes || undefined,
-      })
+      if (isEdit) {
+        await api.subscriptions.update(initialData!.id, {
+          productName: selectedProduct?.name || initialData!.product_name,
+          category: selectedProduct?.category || initialData!.category,
+          productGroup: selectedProduct?.product_group || initialData!.product_group,
+          quantity: Number(form.quantity),
+          unit: selectedProduct?.unit_type || initialData!.unit_label,
+          unitPrice: Number(form.unitPrice),
+        })
+      } else {
+        await api.subscriptions.create({
+          accountName: form.accountName,
+          productName: selectedProduct?.name || '',
+          category: selectedProduct?.category || '',
+          productGroup: selectedProduct?.product_group || '',
+          quantity: Number(form.quantity),
+          unit: selectedProduct?.unit_type || '',
+          unitPrice: Number(form.unitPrice),
+          notes: form.notes || undefined,
+        })
+      }
       onCreated()
     } catch (e) {
       setError(String(e))
@@ -85,9 +108,13 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
       <div className="relative ml-auto h-full w-full max-w-[480px] bg-[var(--bg2)] border-l border-[var(--brd)] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--brd)]">
           <div>
-            <h2 className="text-base font-bold text-[var(--t1)]">New Subscription</h2>
+            <h2 className="text-base font-bold text-[var(--t1)]">{isEdit ? 'Edit Subscription' : 'New Subscription'}</h2>
             <p className="text-xs text-[var(--t4)] mt-0.5">
-              {prefilledAccount ? `Adding to ${prefilledAccount.name}` : 'Add a product subscription'}
+              {isEdit
+                ? `Editing ${initialData!.product_name}`
+                : prefilledAccount
+                  ? `Adding to ${prefilledAccount.name}`
+                  : 'Add a product subscription'}
             </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--t1)] hover:bg-[var(--bg3)] transition-colors">
@@ -97,9 +124,9 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
           <Field label="Account" required>
-            {prefilledAccount ? (
+            {isEdit || prefilledAccount ? (
               <div className="h-9 flex items-center px-3 rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)]/50 text-sm text-[var(--t2)]">
-                {prefilledAccount.name}
+                {form.accountName}
               </div>
             ) : (
               <select className={selectClass} value={form.accountName} onChange={e => set('accountName', e.target.value)}>
@@ -140,15 +167,17 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
             </div>
           )}
 
-          <Field label="Notes">
-            <textarea
-              value={form.notes}
-              onChange={e => set('notes', e.target.value)}
-              rows={3}
-              placeholder="Optional notes..."
-              className="w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-2 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none focus:border-[var(--blue)] transition-colors resize-none"
-            />
-          </Field>
+          {!isEdit && (
+            <Field label="Notes">
+              <textarea
+                value={form.notes}
+                onChange={e => set('notes', e.target.value)}
+                rows={3}
+                placeholder="Optional notes..."
+                className="w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-2 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none focus:border-[var(--blue)] transition-colors resize-none"
+              />
+            </Field>
+          )}
 
           {error && <p className="text-xs text-[var(--red)] bg-[var(--red)]/10 rounded-lg px-3 py-2">{error}</p>}
         </form>
@@ -156,7 +185,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
         <div className="px-6 py-4 border-t border-[var(--brd)] flex justify-end gap-2">
           <Button type="button" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button variant="primary" onClick={handleSubmit as any} disabled={saving}>
-            {saving ? 'Saving…' : 'Add Subscription'}
+            {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Subscription'}
           </Button>
         </div>
       </div>
