@@ -351,18 +351,24 @@ export const mongoRepository = {
     productName?: string; category?: string; productGroup?: string
     quantity?: number; unit?: string; unitPrice?: number; notes?: string
   }): Promise<boolean> {
+    const db = getMongo()
+    const existing = await db.collection('Subscriptions').findOne({ _id: new ObjectId(id) })
+    if (!existing) return false
+
     const update: Record<string, unknown> = {}
     if (data.productName !== undefined) update['Product Name'] = data.productName
     if (data.category !== undefined) update['Category'] = data.category
     if (data.productGroup !== undefined) update['Product Group'] = data.productGroup
     if (data.quantity !== undefined) update['Quantity'] = data.quantity
     if (data.unit !== undefined) update['Unit'] = data.unit
-    if (data.unitPrice !== undefined) {
-      update['Unit Price (€)'] = String(data.unitPrice)
-      if (data.quantity !== undefined) update['Total (€)'] = String(data.quantity * data.unitPrice)
-    }
+    if (data.unitPrice !== undefined) update['Unit Price (€)'] = String(data.unitPrice)
     if (data.notes !== undefined) update['Notes'] = data.notes
-    const result = await getMongo().collection('Subscriptions').updateOne(
+
+    const finalQty = data.quantity ?? (typeof existing['Quantity'] === 'number' ? existing['Quantity'] : parseInt(existing['Quantity']) || 0)
+    const finalPrice = data.unitPrice ?? parseAmount(existing['Unit Price (€)'])
+    update['Total (€)'] = String(finalQty * finalPrice)
+
+    const result = await db.collection('Subscriptions').updateOne(
       { _id: new ObjectId(id) },
       { $set: update }
     )

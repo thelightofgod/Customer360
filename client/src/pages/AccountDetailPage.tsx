@@ -40,13 +40,21 @@ export default function AccountDetailPage() {
   }, [id])
 
   async function handleDeleteContact(contactId: string) {
-    await api.contacts.delete(contactId)
-    refreshAccount()
+    try {
+      await api.contacts.delete(contactId)
+      refreshAccount()
+    } catch (e) {
+      console.error('Failed to delete contact', e)
+    }
   }
 
   async function handleDeleteSub(subId: string) {
-    await api.subscriptions.delete(subId)
-    refreshAccount()
+    try {
+      await api.subscriptions.delete(subId)
+      refreshAccount()
+    } catch (e) {
+      console.error('Failed to delete subscription', e)
+    }
   }
 
   if (loading) {
@@ -71,33 +79,59 @@ export default function AccountDetailPage() {
   return (
     <>
     <Layout>
-      <div className="flex items-center gap-2 text-sm text-[var(--t4)] mb-4">
-        <button onClick={() => navigate('/')} className="text-[var(--blue)] font-medium hover:underline cursor-pointer">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-[var(--t4)] mb-5">
+        <button onClick={() => navigate('/')} className="font-semibold hover:underline cursor-pointer" style={{ color: 'var(--blue)' }}>
           Accounts
         </button>
-        <span>/</span>
+        <span className="opacity-40">/</span>
         <span>{account.name}</span>
       </div>
 
+      {/* Hero header */}
       <div
-        className="relative rounded-[16px] border border-[var(--brd)] overflow-hidden mb-6 p-6"
-        style={{ background: `linear-gradient(135deg, ${account.color}18 0%, var(--bg3) 50%)` }}
+        className="relative rounded-[20px] overflow-hidden mb-6 p-6"
+        style={{
+          background: `linear-gradient(135deg, ${account.color}22 0%, rgba(17,31,50,0.85) 45%, rgba(11,21,38,0.95) 100%)`,
+          border: `1px solid ${account.color}30`,
+          boxShadow: `0 0 60px ${account.color}10, 0 8px 40px rgba(0,0,0,0.40)`,
+          backdropFilter: 'blur(12px)',
+        }}
       >
+        {/* ambient glow blobs */}
         <div
-          className="absolute top-0 left-0 w-64 h-64 rounded-full pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${account.color}22 0%, transparent 70%)`, transform: 'translate(-30%, -30%)' }}
+          className="absolute top-0 left-0 w-72 h-72 rounded-full pointer-events-none"
+          style={{
+            background: `radial-gradient(circle, ${account.color}28 0%, transparent 68%)`,
+            transform: 'translate(-35%, -35%)',
+          }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-48 h-48 rounded-full pointer-events-none opacity-40"
+          style={{
+            background: `radial-gradient(circle, ${account.color}18 0%, transparent 70%)`,
+            transform: 'translate(30%, 30%)',
+          }}
+        />
+        {/* top gradient line */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px pointer-events-none"
+          style={{ background: `linear-gradient(90deg, transparent, ${account.color}60, transparent)` }}
         />
 
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <div
-              className="w-16 h-16 rounded-[14px] flex items-center justify-center font-bold text-2xl text-white flex-shrink-0 shadow-lg"
-              style={{ backgroundColor: account.color, boxShadow: `0 8px 24px ${account.color}50` }}
+              className="w-16 h-16 rounded-[16px] flex items-center justify-center font-bold text-2xl text-white flex-shrink-0"
+              style={{
+                backgroundColor: account.color,
+                boxShadow: `0 8px 32px ${account.color}55, 0 0 0 1px ${account.color}40`,
+              }}
             >
               {account.name.charAt(0)}
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{account.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-[var(--t1)]">{account.name}</h1>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <span className="text-sm text-[var(--t3)]">{account.sector}</span>
                 <span className="text-[var(--brd3)]">·</span>
@@ -108,7 +142,9 @@ export default function AccountDetailPage() {
                 {account.arr > 0 && (
                   <>
                     <span className="text-[var(--brd3)]">·</span>
-                    <span className="text-sm font-mono font-bold text-[var(--green)]">{fmtCurrency(account.arr)}</span>
+                    <span className="text-sm font-mono font-bold" style={{ color: 'var(--green)', textShadow: '0 0 16px rgba(46,216,150,0.5)' }}>
+                      {fmtCurrency(account.arr)}
+                    </span>
                     <span className="text-xs text-[var(--t4)]">ARR</span>
                   </>
                 )}
@@ -116,7 +152,7 @@ export default function AccountDetailPage() {
                   <>
                     <span className="text-[var(--brd3)]">·</span>
                     <span className="text-xs text-[var(--t3)]">CSM:</span>
-                    <span className="text-xs font-medium text-[var(--t2)]">{account.csm}</span>
+                    <span className="text-xs font-semibold text-[var(--t2)]">{account.csm}</span>
                   </>
                 )}
               </div>

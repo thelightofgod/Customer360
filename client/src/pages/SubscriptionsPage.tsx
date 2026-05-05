@@ -33,7 +33,7 @@ export default function SubscriptionsPage() {
   const filtered = search
     ? subs.filter(s =>
         (s.product_name || '').toLowerCase().includes(search.toLowerCase()) ||
-        (s.account_name || '').toLowerCase().includes(search.toLowerCase()) ||
+        ((s as any).account_name || '').toLowerCase().includes(search.toLowerCase()) ||
         (s.category || '').toLowerCase().includes(search.toLowerCase())
       )
     : subs
@@ -44,15 +44,19 @@ export default function SubscriptionsPage() {
     <Layout>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[var(--t1)]">Subscriptions</h1>
-          <p className="text-sm text-[var(--t4)] mt-0.5">{subs.length} subscriptions · {fmtCurrency(totalValue)} total</p>
+          <h1 className="text-xl font-bold text-[var(--t1)] tracking-tight">Subscriptions</h1>
+          <p className="text-sm text-[var(--t4)] mt-0.5">
+            {subs.length} subscriptions ·{' '}
+            <span className="font-mono font-semibold" style={{ color: 'var(--green)' }}>{fmtCurrency(totalValue)}</span>
+            {' '}total
+          </p>
         </div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>
           <Plus className="w-3.5 h-3.5" /> New Subscription
         </Button>
       </div>
 
-      <div className="relative mb-4">
+      <div className="relative mb-5">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--t4)]" />
         <Input
           placeholder="Search by product, account, category..."
@@ -62,8 +66,19 @@ export default function SubscriptionsPage() {
         />
       </div>
 
-      <div className={`bg-[var(--bg2)] border border-[var(--brd)] rounded-[14px] overflow-hidden ${loading ? 'opacity-60' : ''} transition-opacity`}>
-        <div className="grid grid-cols-[1.5fr_1fr_120px_90px_100px_110px_72px] gap-1 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)] bg-[var(--bg3)] border-b border-[var(--brd)]">
+      <div
+        className={`rounded-[16px] overflow-hidden transition-opacity ${loading ? 'opacity-50' : ''}`}
+        style={{
+          background: 'rgba(11, 21, 38, 0.75)',
+          border: '1px solid var(--brd)',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.30)',
+        }}
+      >
+        <div
+          className="grid grid-cols-[1.5fr_1fr_120px_90px_100px_110px_72px] gap-1 px-5 py-3 text-[10px] font-bold uppercase tracking-[1px] text-[var(--t4)]"
+          style={{ background: 'rgba(22, 38, 56, 0.80)', borderBottom: '1px solid var(--brd)' }}
+        >
           <span>Product</span>
           <span>Account</span>
           <span className="text-center">Category</span>
@@ -74,43 +89,56 @@ export default function SubscriptionsPage() {
         </div>
 
         {filtered.length === 0 && !loading && (
-          <div className="text-center py-16 text-[var(--t4)]">No subscriptions found</div>
+          <div className="text-center py-20 text-[var(--t4)]">
+            <div className="text-3xl mb-3 opacity-40">📦</div>
+            No subscriptions found
+          </div>
         )}
 
         {filtered.map(s => (
-          <div key={s.id} className="grid grid-cols-[1.5fr_1fr_120px_90px_100px_110px_72px] gap-1 items-center px-5 py-3 border-b border-white/[0.02] hover:bg-[var(--bg3)] transition-colors last:border-0 text-sm">
+          <div
+            key={s.id}
+            className="grid grid-cols-[1.5fr_1fr_120px_90px_100px_110px_72px] gap-1 items-center px-5 py-3.5 border-b border-white/[0.025] last:border-0 text-sm transition-all duration-150"
+            style={{ background: 'transparent' }}
+            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'rgba(91,158,255,0.04)'}
+            onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
+          >
             <div>
-              <div className="font-medium text-[var(--t1)]">{s.product_name}</div>
+              <div className="font-semibold text-[var(--t1)]">{s.product_name}</div>
               <div className="text-[11px] text-[var(--t4)]">{s.product_group}</div>
             </div>
-            <span className="text-xs text-[var(--t3)]">{s.account_name}</span>
+            <span className="text-xs font-medium text-[var(--t3)]">{(s as any).account_name}</span>
             <span className="text-center">
               <Badge variant={categoryVariant(s.category)} className="text-[10px] px-1.5 py-0 rounded-[4px]">
                 {s.category}
               </Badge>
             </span>
-            <span className="font-mono font-semibold text-center text-[var(--t1)]">
+            <span className="font-mono font-bold text-center text-[var(--t1)]">
               {s.quantity} <span className="text-[10px] text-[var(--t4)] font-normal">{s.unit_label}</span>
             </span>
             <span className="font-mono text-right text-[var(--t2)]">{fmtCurrency(s.unit_price)}</span>
-            <span className="font-mono font-semibold text-right text-[var(--t1)]">{fmtCurrency(s.total_price)}</span>
+            <span className="font-mono font-bold text-right" style={{ color: 'var(--green)' }}>{fmtCurrency(s.total_price)}</span>
             <div className="flex items-center justify-end gap-1">
               {deletingId === s.id ? (
                 <>
-                  <button onClick={() => handleDelete(s.id)} className="text-[10px] text-[var(--red)] hover:underline font-medium">Del</button>
+                  <button onClick={() => handleDelete(s.id)} className="text-[10px] text-[var(--red)] hover:underline font-bold">Del</button>
                   <button onClick={() => setDeletingId(null)} className="text-[10px] text-[var(--t4)] hover:underline ml-1">✕</button>
                 </>
               ) : (
                 <>
                   <button
                     onClick={() => setEditingSub(s)}
-                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--t4)] hover:text-[var(--t1)] hover:bg-[var(--bg3)] transition-colors"
+                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--t4)] transition-all duration-150 hover:text-[var(--t1)]"
+                    onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'transparent'}
                   >
                     <Pencil className="w-3 h-3" />
                   </button>
                   <button
                     onClick={() => setDeletingId(s.id)}
-                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--t4)] hover:text-[var(--red)] hover:bg-[var(--red)]/10 transition-colors"
+                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--t4)] transition-all duration-150 hover:text-[var(--red)]"
+                    onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = 'var(--red-bg)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'transparent'}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -121,9 +149,17 @@ export default function SubscriptionsPage() {
         ))}
 
         {filtered.length > 0 && (
-          <div className="flex justify-between items-center px-5 py-3.5 bg-[var(--bg3)] border-t border-[var(--brd)]">
-            <span className="text-xs font-semibold uppercase tracking-[0.5px] text-[var(--t3)]">Total Value</span>
-            <span className="text-lg font-bold font-mono text-[var(--green)]">{fmtCurrency(totalValue)}</span>
+          <div
+            className="flex justify-between items-center px-5 py-4"
+            style={{ background: 'rgba(22, 38, 56, 0.60)', borderTop: '1px solid var(--brd)' }}
+          >
+            <span className="text-xs font-bold uppercase tracking-[0.7px] text-[var(--t3)]">Total Value</span>
+            <span
+              className="text-lg font-bold font-mono"
+              style={{ color: 'var(--green)', textShadow: '0 0 20px rgba(46,216,150,0.4)' }}
+            >
+              {fmtCurrency(totalValue)}
+            </span>
           </div>
         )}
       </div>

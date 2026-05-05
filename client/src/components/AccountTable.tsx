@@ -53,17 +53,27 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 bg-[var(--bg3)] border border-[var(--brd)] rounded-[10px] p-1">
+      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
+        <div
+          className="flex items-center gap-1 p-1 rounded-[12px]"
+          style={{
+            background: 'rgba(17, 31, 50, 0.7)',
+            border: '1px solid var(--brd)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
           {FILTERS.map(f => (
             <button
               key={f.value}
               onClick={() => onFilter(f.value)}
-              className={`px-4 py-1.5 rounded-[8px] text-xs font-semibold transition-all cursor-pointer ${
-                filter === f.value
-                  ? 'bg-[var(--blue)] text-white shadow-sm'
-                  : 'text-[var(--t3)] hover:text-[var(--t1)] hover:bg-white/5'
-              }`}
+              className="px-4 py-1.5 rounded-[9px] text-xs font-semibold transition-all duration-200 cursor-pointer"
+              style={filter === f.value ? {
+                background: 'linear-gradient(135deg, var(--blue), #3a7ff5)',
+                color: 'white',
+                boxShadow: '0 3px 12px rgba(91, 158, 255, 0.35)',
+              } : {
+                color: 'var(--t3)',
+              }}
             >
               {f.label}
             </button>
@@ -81,27 +91,38 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
       </div>
 
       {/* Table */}
-      <div className="bg-[var(--bg2)] border border-[var(--brd)] rounded-[14px] overflow-hidden">
+      <div
+        className="rounded-[16px] overflow-hidden"
+        style={{
+          background: 'rgba(11, 21, 38, 0.75)',
+          border: '1px solid var(--brd)',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.30)',
+        }}
+      >
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-[var(--bg3)]">
+            <tr style={{ background: 'rgba(22, 38, 56, 0.80)' }}>
               {COLS.map(c => (
                 <th
                   key={c.key}
                   onClick={() => onSort(c.key)}
-                  className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.9px] text-[var(--t4)] border-b border-[var(--brd)] cursor-pointer hover:text-[var(--t2)] whitespace-nowrap select-none transition-colors"
+                  className="text-left px-5 py-3.5 text-[10px] font-bold uppercase tracking-[1px] text-[var(--t4)] border-b border-[var(--brd)] cursor-pointer hover:text-[var(--t2)] whitespace-nowrap select-none transition-colors"
                 >
                   {c.label}{sortArrow(c.key)}
                 </th>
               ))}
-              <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.9px] text-[var(--t4)] border-b border-[var(--brd)] whitespace-nowrap">CSM</th>
+              <th className="text-left px-5 py-3.5 text-[10px] font-bold uppercase tracking-[1px] text-[var(--t4)] border-b border-[var(--brd)] whitespace-nowrap">CSM</th>
               <th className="border-b border-[var(--brd)] w-10" />
             </tr>
           </thead>
           <tbody>
             {accounts.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center py-16 text-[var(--t4)]">No accounts found</td>
+                <td colSpan={6} className="text-center py-20 text-[var(--t4)]">
+                  <div className="text-3xl mb-3 opacity-40">🔍</div>
+                  No accounts found
+                </td>
               </tr>
             )}
             {accounts.map(a => {
@@ -110,28 +131,41 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
                 <tr
                   key={a.id}
                   onClick={() => navigate(`/accounts/${a.id}`)}
-                  className="cursor-pointer hover:bg-[var(--bg3)] transition-colors group"
+                  className="cursor-pointer transition-all duration-150 group"
+                  style={{ background: 'transparent' }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLTableRowElement).style.background = `linear-gradient(90deg, ${a.color}08 0%, rgba(91,158,255,0.04) 100%)`
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'
+                  }}
                 >
                   <td className="px-0 py-0">
                     <div className="flex items-center gap-3.5 px-5 py-4">
                       <div
-                        className="w-1 h-10 rounded-full flex-shrink-0 opacity-70 group-hover:opacity-100 transition-opacity"
-                        style={{ backgroundColor: a.color }}
+                        className="w-1 h-10 rounded-full flex-shrink-0 transition-all duration-200 opacity-60 group-hover:opacity-100 group-hover:h-11"
+                        style={{
+                          backgroundColor: a.color,
+                          boxShadow: `0 0 8px ${a.color}80`,
+                        }}
                       />
                       <div
-                        className="w-9 h-9 rounded-[8px] flex items-center justify-center font-bold text-sm text-white flex-shrink-0"
-                        style={{ backgroundColor: a.color }}
+                        className="w-9 h-9 rounded-[10px] flex items-center justify-center font-bold text-sm text-white flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+                        style={{
+                          backgroundColor: a.color,
+                          boxShadow: `0 4px 16px ${a.color}50`,
+                        }}
                       >
                         {a.name.charAt(0)}
                       </div>
                       <div>
-                        <div className="font-semibold text-[var(--t1)] text-sm leading-tight">{a.name}</div>
+                        <div className="font-semibold text-[var(--t1)] text-sm leading-tight group-hover:text-white transition-colors">{a.name}</div>
                         <div className="text-[11px] text-[var(--t4)] mt-0.5">{a.sector}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-5 py-4">
-                    <span className="font-mono text-sm font-semibold text-[var(--t1)]">{fmtCurrency(a.arr)}</span>
+                    <span className="font-mono text-sm font-bold text-[var(--green)]">{fmtCurrency(a.arr)}</span>
                   </td>
                   <td className="px-5 py-4">
                     {days === null ? (
@@ -165,14 +199,18 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
                     {confirmId === a.id ? (
                       <button
                         onClick={e => handleDelete(e, a.id)}
-                        className="text-[9px] font-bold text-[var(--red)] bg-[var(--red)]/10 border border-[var(--red)]/30 rounded-lg px-2 py-1 hover:bg-[var(--red)]/20 transition-colors whitespace-nowrap"
+                        className="text-[9px] font-bold text-[var(--red)] rounded-lg px-2 py-1 transition-colors whitespace-nowrap"
+                        style={{ background: 'var(--red-bg)', border: '1px solid rgba(242,100,100,0.25)' }}
                       >
                         Confirm?
                       </button>
                     ) : (
                       <button
                         onClick={e => handleDelete(e, a.id)}
-                        className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--red)] hover:bg-[var(--red)]/10 transition-all"
+                        className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--red)] transition-all duration-200"
+                        style={{ background: 'transparent' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = 'var(--red-bg)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'transparent'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -184,7 +222,7 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
           </tbody>
         </table>
       </div>
-      <div className="mt-2 text-xs text-[var(--t4)] text-right pr-1">{accounts.length} accounts</div>
+      <div className="mt-2.5 text-[11px] text-[var(--t4)] text-right pr-1 font-mono">{accounts.length} accounts</div>
     </div>
   )
 }
