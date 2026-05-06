@@ -22,6 +22,7 @@ export interface Account {
 export interface SubscriptionDetail {
   id: string
   account_id: string
+  account_name?: string
   product_id: string
   quantity: number
   unit_label: string
@@ -37,6 +38,7 @@ export interface SubscriptionDetail {
 export interface Contact {
   id: string
   account_id: string
+  account_name?: string
   name: string
   role: string
   initials: string

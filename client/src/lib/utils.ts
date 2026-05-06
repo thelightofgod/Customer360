@@ -5,15 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Only used for static display in navbar — calculations use new Date() directly
 export const TODAY = new Date()
 
 export function daysUntil(dateStr: string | null | undefined): number | null {
   if (!dateStr) return null
-  return Math.ceil((new Date(dateStr).getTime() - TODAY.getTime()) / 86400000)
+  return Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / 86400000)
 }
 
 export function fmtCurrency(n: number | null | undefined): string {
-  if (!n || n === 0) return '—'
+  if (n == null || n === 0) return '—'
   return '€' + n.toLocaleString('de-DE')
 }
 
@@ -68,6 +69,6 @@ export function pctElapsed(start: string | null, end: string | null): number {
   if (!start || !end) return 0
   const a = new Date(start).getTime()
   const b = new Date(end).getTime()
-  const n = TODAY.getTime()
+  const n = new Date().getTime()
   return Math.min(100, Math.max(0, ((n - a) / (b - a)) * 100))
 }

@@ -10,17 +10,22 @@ export default function NotesTab({ account }: Props) {
   const [text, setText] = useState(account.notes || '')
   const [saved, setSaved] = useState(account.notes || '')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   async function handleSave() {
     setSaving(true)
+    setError('')
     try {
-      await fetch(`/api/accounts/${account.id}/notes`, {
+      const r = await fetch(`/api/accounts/${account.id}/notes`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes: text }),
       })
+      if (!r.ok) throw new Error('Failed to save')
       setSaved(text)
       setEditing(false)
+    } catch {
+      setError('Could not save notes. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -29,13 +34,17 @@ export default function NotesTab({ account }: Props) {
   function handleCancel() {
     setText(saved)
     setEditing(false)
+    setError('')
   }
 
   return (
-    <div className="bg-[var(--bg3)] border border-[var(--brd)] rounded-[14px] p-5">
+    <div
+      className="rounded-[16px] p-5"
+      style={{ background: 'rgba(35, 45, 78, 0.70)', border: '1px solid var(--brd)', backdropFilter: 'blur(8px)' }}
+    >
       <div className="flex items-center justify-between mb-4">
-        <div className="text-xs font-semibold uppercase tracking-[0.6px] text-[var(--t4)] flex items-center gap-2">
-          <div className="w-1 h-3 rounded-full bg-[var(--amber)]" />
+        <div className="text-xs font-bold uppercase tracking-[0.8px] text-[var(--t4)] flex items-center gap-2">
+          <div className="w-1.5 h-3.5 rounded-full" style={{ background: 'linear-gradient(180deg, #f7aa28, #e09020)' }} />
           Notes
         </div>
         {!editing ? (
@@ -61,12 +70,19 @@ export default function NotesTab({ account }: Props) {
           autoFocus
           rows={10}
           placeholder="Write notes about this account..."
-          className="w-full rounded-[10px] border border-[var(--blue)] bg-[var(--bg2)] px-4 py-3 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none resize-none leading-relaxed"
+          className="w-full rounded-[10px] px-4 py-3 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none resize-none leading-relaxed"
+          style={{ background: 'var(--bg2)', border: '1px solid var(--blue)' }}
         />
       ) : saved ? (
         <p className="text-sm text-[var(--t2)] leading-relaxed whitespace-pre-wrap">{saved}</p>
       ) : (
         <p className="text-sm text-[var(--t4)] italic">No notes yet. Click Edit to add some.</p>
+      )}
+
+      {error && (
+        <p className="mt-3 text-xs text-[var(--red)] rounded-lg px-3 py-2" style={{ background: 'var(--red-bg)' }}>
+          {error}
+        </p>
       )}
     </div>
   )

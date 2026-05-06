@@ -33,7 +33,7 @@ export default function SubscriptionsPage() {
   const filtered = search
     ? subs.filter(s =>
         (s.product_name || '').toLowerCase().includes(search.toLowerCase()) ||
-        ((s as any).account_name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (s.account_name || '').toLowerCase().includes(search.toLowerCase()) ||
         (s.category || '').toLowerCase().includes(search.toLowerCase())
       )
     : subs
@@ -107,7 +107,7 @@ export default function SubscriptionsPage() {
               <div className="font-semibold text-[var(--t1)]">{s.product_name}</div>
               <div className="text-[11px] text-[var(--t4)]">{s.product_group}</div>
             </div>
-            <span className="text-xs font-medium text-[var(--t3)]">{(s as any).account_name}</span>
+            <span className="text-xs font-medium text-[var(--t3)]">{s.account_name}</span>
             <span className="text-center">
               <Badge variant={categoryVariant(s.category)} className="text-[10px] px-1.5 py-0 rounded-[4px]">
                 {s.category}

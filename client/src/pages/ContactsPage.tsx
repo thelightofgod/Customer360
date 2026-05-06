@@ -44,7 +44,7 @@ export default function ContactsPage() {
   const filtered = search
     ? contacts.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
-        ((c as any).account_name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (c.account_name || '').toLowerCase().includes(search.toLowerCase()) ||
         (c.role || '').toLowerCase().includes(search.toLowerCase())
       )
     : contacts
@@ -114,12 +114,12 @@ export default function ContactsPage() {
                 </Badge>
               </div>
 
-              {(c as any).account_name && (
+              {c.account_name && (
                 <div
                   className="text-[11px] text-[var(--t4)] rounded-[8px] px-2.5 py-1.5 mb-2 truncate font-medium"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--brd)' }}
                 >
-                  {(c as any).account_name}
+                  {c.account_name}
                 </div>
               )}
 

@@ -68,7 +68,8 @@ export default function OverviewTab({ account }: Props) {
         <KpiCard label="Annual Recurring Revenue" value={fmtCurrency(account.arr)} hex="#2ed896" icon={DollarSign} />
         <KpiCard label="Total Licenses" value={account.total_licenses > 0 ? String(account.total_licenses) : '—'}
           sub="licensed users" hex="#5b9eff" icon={Users} />
-        <KpiCard label="Renewal" value={days !== null ? `${days}d` : '—'}
+        <KpiCard label="Renewal"
+          value={days === null ? '—' : days < 0 ? 'Expired' : `${days}d`}
           sub={fmtDate(account.renewal_date)} hex={renewalHex} icon={CalendarClock} />
         <KpiCard label="Open Tickets" value={String(account.open_tickets)} hex={ticketHex} icon={Ticket} />
       </div>
