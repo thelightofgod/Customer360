@@ -53,7 +53,7 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
         <div
           className="flex items-center gap-1 p-1 rounded-[12px]"
           style={{
@@ -66,7 +66,7 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
             <button
               key={f.value}
               onClick={() => onFilter(f.value)}
-              className="px-4 py-1.5 rounded-[9px] text-xs font-semibold transition-all duration-200 cursor-pointer"
+              className="px-3 md:px-4 py-1.5 rounded-[9px] text-xs font-semibold transition-all duration-200 cursor-pointer"
               style={filter === f.value ? {
                 background: 'linear-gradient(135deg, var(--blue), #3a7ff5)',
                 color: 'white',
@@ -79,13 +79,13 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
             </button>
           ))}
         </div>
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--t4)]" />
           <Input
             placeholder="Search accounts, sector, CSM..."
             value={search}
             onChange={e => onSearch(e.target.value)}
-            className="pl-8 w-72"
+            className="pl-8 w-full sm:w-72"
           />
         </div>
       </div>
@@ -100,7 +100,8 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
           boxShadow: '0 8px 40px rgba(0,0,0,0.30)',
         }}
       >
-        <table className="w-full border-collapse">
+        <div className="overflow-x-auto">
+        <table className="w-full border-collapse min-w-[600px]">
           <thead>
             <tr style={{ background: 'rgba(22, 38, 56, 0.80)' }}>
               {COLS.map(c => (
@@ -221,6 +222,7 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
             })}
           </tbody>
         </table>
+        </div>
       </div>
       <div className="mt-2.5 text-[11px] text-[var(--t4)] text-right pr-1 font-mono">{accounts.length} accounts</div>
     </div>

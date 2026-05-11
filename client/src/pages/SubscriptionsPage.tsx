@@ -25,9 +25,14 @@ export default function SubscriptionsPage() {
   useEffect(() => { fetchSubs() }, [])
 
   async function handleDelete(id: string) {
-    await api.subscriptions.delete(id)
-    setDeletingId(null)
-    fetchSubs()
+    try {
+      await api.subscriptions.delete(id)
+      setDeletingId(null)
+      fetchSubs()
+    } catch (e) {
+      console.error('Failed to delete subscription', e)
+      setDeletingId(null)
+    }
   }
 
   const filtered = search
@@ -42,7 +47,7 @@ export default function SubscriptionsPage() {
 
   return (
     <Layout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
         <div>
           <h1 className="text-xl font-bold text-[var(--t1)] tracking-tight">Subscriptions</h1>
           <p className="text-sm text-[var(--t4)] mt-0.5">
@@ -62,7 +67,7 @@ export default function SubscriptionsPage() {
           placeholder="Search by product, account, category..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="pl-8 max-w-sm"
+          className="pl-8 w-full sm:max-w-sm"
         />
       </div>
 
@@ -75,6 +80,8 @@ export default function SubscriptionsPage() {
           boxShadow: '0 8px 40px rgba(0,0,0,0.30)',
         }}
       >
+        <div className="overflow-x-auto">
+        <div className="min-w-[720px]">
         <div
           className="grid grid-cols-[1.5fr_1fr_120px_90px_100px_110px_72px] gap-1 px-5 py-3 text-[10px] font-bold uppercase tracking-[1px] text-[var(--t4)]"
           style={{ background: 'rgba(22, 38, 56, 0.80)', borderBottom: '1px solid var(--brd)' }}
@@ -148,6 +155,8 @@ export default function SubscriptionsPage() {
           </div>
         ))}
 
+        </div>
+        </div>
         {filtered.length > 0 && (
           <div
             className="flex justify-between items-center px-5 py-4"

@@ -36,9 +36,14 @@ export default function ContactsPage() {
   useEffect(() => { fetchContacts() }, [])
 
   async function handleDelete(id: string) {
-    await api.contacts.delete(id)
-    setDeletingId(null)
-    fetchContacts()
+    try {
+      await api.contacts.delete(id)
+      setDeletingId(null)
+      fetchContacts()
+    } catch (e) {
+      console.error('Failed to delete contact', e)
+      setDeletingId(null)
+    }
   }
 
   const filtered = search
@@ -51,7 +56,7 @@ export default function ContactsPage() {
 
   return (
     <Layout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
         <div>
           <h1 className="text-xl font-bold text-[var(--t1)] tracking-tight">Contacts</h1>
           <p className="text-sm text-[var(--t4)] mt-0.5">{contacts.length} contacts across all accounts</p>
@@ -67,11 +72,11 @@ export default function ContactsPage() {
           placeholder="Search by name, account, role..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="pl-8 max-w-sm"
+          className="pl-8 w-full sm:max-w-sm"
         />
       </div>
 
-      <div className={`grid grid-cols-3 gap-3 transition-opacity ${loading ? 'opacity-50' : ''}`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 transition-opacity ${loading ? 'opacity-50' : ''}`}>
         {filtered.length === 0 && !loading && (
           <div className="col-span-3 text-center py-20 text-[var(--t4)]">
             <div className="text-3xl mb-3 opacity-40">👥</div>

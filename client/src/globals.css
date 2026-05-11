@@ -56,3 +56,6 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--brd2); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--brd3); }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }

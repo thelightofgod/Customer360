@@ -103,7 +103,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative ml-auto h-full w-full max-w-[520px] bg-[var(--bg2)] border-l border-[var(--brd)] flex flex-col shadow-2xl">
+      <div className="relative ml-auto h-full w-full max-w-full sm:max-w-[520px] bg-[var(--bg2)] border-l border-[var(--brd)] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--brd)]">
           <div>
             <h2 className="text-base font-bold text-[var(--t1)]">{isEdit ? 'Edit Account' : 'New Account'}</h2>

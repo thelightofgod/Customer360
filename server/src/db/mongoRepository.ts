@@ -267,8 +267,9 @@ export const mongoRepository = {
     if (accountId) {
       try {
         const acct = await db.collection('Accounts').findOne({ _id: new ObjectId(accountId) })
-        if (acct) query = { 'Account Name': acct['Account Name'] }
-      } catch { /* ignore bad id */ }
+        if (!acct) return []
+        query = { 'Account Name': acct['Account Name'] }
+      } catch { return [] }
     }
 
     const docs = await db.collection('Contacts').find(query).toArray()

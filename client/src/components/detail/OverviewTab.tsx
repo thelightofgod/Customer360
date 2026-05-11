@@ -64,7 +64,7 @@ export default function OverviewTab({ account }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard label="Annual Recurring Revenue" value={fmtCurrency(account.arr)} hex="#2ed896" icon={DollarSign} />
         <KpiCard label="Total Licenses" value={account.total_licenses > 0 ? String(account.total_licenses) : '—'}
           sub="licensed users" hex="#5b9eff" icon={Users} />
@@ -74,7 +74,7 @@ export default function OverviewTab({ account }: Props) {
         <KpiCard label="Open Tickets" value={String(account.open_tickets)} hex={ticketHex} icon={Ticket} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div
           className="rounded-[16px] p-5"
           style={{ background: 'rgba(35, 45, 78, 0.70)', border: '1px solid var(--brd)', backdropFilter: 'blur(8px)' }}
@@ -135,7 +135,7 @@ export default function OverviewTab({ account }: Props) {
           {account.contacts.length === 0 ? (
             <p className="text-sm text-[var(--t4)]">No contacts</p>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {account.contacts.map(c => (
                 <div
                   key={c.id}

@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { TODAY } from '@/lib/utils'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const dateStr = TODAY.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 
   const navLinks = [
     { path: '/', label: 'Accounts' },
@@ -16,7 +15,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--bg)]">
       <nav
-        className="h-14 flex items-center justify-between px-8 sticky top-0 z-50"
+        className="h-14 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-50"
         style={{
           background: 'rgba(25, 32, 58, 0.85)',
           backdropFilter: 'blur(24px)',
@@ -25,10 +24,10 @@ export default function Layout({ children }: { children: ReactNode }) {
           boxShadow: '0 1px 0 rgba(91, 158, 255, 0.06), 0 4px 24px rgba(0,0,0,0.25)',
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 lg:gap-4 min-w-0">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2.5 hover:opacity-85 transition-opacity cursor-pointer"
+            className="flex items-center gap-2 hover:opacity-85 transition-opacity cursor-pointer flex-shrink-0"
           >
             <div
               className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center"
@@ -41,14 +40,15 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <path d="M3 8h3l1.5-4 2.5 8 1.5-4H14" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="text-sm font-bold tracking-tight text-[var(--t1)]">BI Technology</span>
+            <span className="hidden sm:inline text-sm font-bold tracking-tight text-[var(--t1)]">BI Technology</span>
           </button>
 
-          <div className="w-px h-5 bg-[var(--brd)]" />
-          <span className="text-[14px] font-semibold text-[var(--t3)]">Customer 360</span>
-          <div className="w-px h-5 bg-[var(--brd)] ml-1" />
+          <div className="hidden sm:block w-px h-5 bg-[var(--brd)]" />
+          <span className="hidden sm:inline text-[13px] font-semibold text-[var(--t3)]">Customer 360</span>
+          <span className="inline sm:hidden text-[13px] font-semibold text-[var(--t3)]">C360</span>
+          <div className="hidden md:block w-px h-5 bg-[var(--brd)]" />
 
-          <nav className="flex items-center gap-0.5 ml-1">
+          <nav className="flex items-center gap-0.5">
             {navLinks.map(link => {
               const active = link.path === '/'
                 ? location.pathname === '/' || location.pathname.startsWith('/accounts')
@@ -57,7 +57,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <button
                   key={link.path}
                   onClick={() => navigate(link.path)}
-                  className="relative px-3.5 py-1.5 rounded-[9px] text-xs font-semibold transition-all duration-200 cursor-pointer"
+                  className="relative px-2.5 md:px-3.5 py-1.5 rounded-[9px] text-xs font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap"
                   style={active ? {
                     color: 'var(--blue)',
                     background: 'linear-gradient(135deg, rgba(91, 158, 255, 0.18) 0%, rgba(91, 158, 255, 0.07) 100%)',
@@ -81,17 +81,17 @@ export default function Layout({ children }: { children: ReactNode }) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-[11px] text-[var(--t4)] font-mono tabular-nums">{dateStr}</span>
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+          <span className="hidden md:inline text-[11px] text-[var(--t4)] font-mono tabular-nums">{dateStr}</span>
           <div
-            className="flex items-center gap-1.5 py-1 pl-3 pr-1 rounded-full text-xs font-medium text-[var(--t2)] cursor-pointer transition-all hover:border-[var(--brd2)]"
+            className="flex items-center gap-1.5 py-1 pl-2 md:pl-3 pr-1 rounded-full text-xs font-medium text-[var(--t2)] cursor-pointer transition-all hover:border-[var(--brd2)]"
             style={{
               background: 'rgba(17, 31, 50, 0.70)',
               border: '1px solid rgba(255,255,255,0.07)',
               backdropFilter: 'blur(8px)',
             }}
           >
-            Omer
+            <span className="hidden md:inline">Omer</span>
             <div
               className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[10px] font-bold text-white"
               style={{
@@ -105,7 +105,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </nav>
 
-      <main className="max-w-[1380px] mx-auto px-8 py-6 pb-16">
+      <main className="max-w-[1380px] mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6 pb-16">
         {children}
       </main>
     </div>

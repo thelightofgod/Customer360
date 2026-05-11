@@ -44,6 +44,8 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete }: P
 
   return (
     <div className="bg-[var(--bg3)] border border-[var(--brd)] rounded-[14px] overflow-hidden">
+      <div className="overflow-x-auto">
+      <div className="min-w-[540px]">
       <div className={`grid ${colClass} gap-1 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)] bg-black/20 border-b border-[var(--brd)]`}>
         <span>Product</span>
         <span className="text-center">Category</span>
@@ -100,6 +102,8 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete }: P
         </div>
       ))}
 
+      </div>
+      </div>
       <div className="flex justify-between items-center px-4 py-3.5 bg-black/20 border-t border-[var(--brd)]">
         <span className="text-xs font-semibold uppercase tracking-[0.5px] text-[var(--t3)]">Total Annual Value</span>
         <div className="flex items-center gap-3">

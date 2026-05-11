@@ -58,7 +58,7 @@ export default function AccountsPage() {
     <>
     <Layout>
       {stats && <SummaryCards stats={stats} />}
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 mt-2">
         <Button variant="primary" onClick={() => setShowAdd(true)}>
           <Plus className="w-3.5 h-3.5" /> New Account
         </Button>

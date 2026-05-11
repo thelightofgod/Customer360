@@ -56,7 +56,7 @@ function Card({
 
 export default function SummaryCards({ stats }: Props) {
   return (
-    <div className="grid grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4 mb-6">
       <Card label="Total Accounts" value={String(stats.total_accounts)}
         sub={`${stats.active_accounts} active · ${stats.prospect_accounts} prospect`}
         icon={Users} hex="#5b9eff" />

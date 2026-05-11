@@ -5,9 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Only used for static display in navbar — calculations use new Date() directly
-export const TODAY = new Date()
-
 export function daysUntil(dateStr: string | null | undefined): number | null {
   if (!dateStr) return null
   return Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / 86400000)

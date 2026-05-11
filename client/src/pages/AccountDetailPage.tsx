@@ -119,10 +119,10 @@ export default function AccountDetailPage() {
           style={{ background: `linear-gradient(90deg, transparent, ${account.color}60, transparent)` }}
         />
 
-        <div className="relative flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-5">
+        <div className="relative flex flex-col sm:flex-row items-start justify-between gap-4">
+          <div className="flex items-center gap-4 md:gap-5">
             <div
-              className="w-16 h-16 rounded-[16px] flex items-center justify-center font-bold text-2xl text-white flex-shrink-0"
+              className="w-12 h-12 md:w-16 md:h-16 rounded-[14px] md:rounded-[16px] flex items-center justify-center font-bold text-xl md:text-2xl text-white flex-shrink-0"
               style={{
                 backgroundColor: account.color,
                 boxShadow: `0 8px 32px ${account.color}55, 0 0 0 1px ${account.color}40`,
@@ -158,7 +158,7 @@ export default function AccountDetailPage() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button onClick={() => navigate('/')}>
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </Button>
