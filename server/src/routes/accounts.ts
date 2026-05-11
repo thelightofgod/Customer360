@@ -15,9 +15,9 @@ router.get('/summary', async (_req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const { filter = 'all', search = '', sort = 'name', order = 'asc' } = req.query as Record<string, string>
-    const accounts = await repo.getAccounts(filter, search, sort, order)
-    res.json({ accounts, total: accounts.length })
+    const { filter = 'all', search = '', sort = 'name', order = 'asc', page = '1', limit = '20' } = req.query as Record<string, string>
+    const result = await repo.getAccounts(filter, search, sort, order, parseInt(page), parseInt(limit))
+    res.json(result)
   } catch (e) {
     res.status(500).json({ error: String(e) })
   }

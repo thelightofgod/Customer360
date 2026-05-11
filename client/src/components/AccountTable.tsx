@@ -23,6 +23,7 @@ const COLS = [
 
 interface Props {
   accounts: Account[]
+  total?: number
   filter: string
   search: string
   sort: string
@@ -33,7 +34,7 @@ interface Props {
   onDeleted?: () => void
 }
 
-export default function AccountTable({ accounts, filter, search, sort, order, onFilter, onSearch, onSort, onDeleted }: Props) {
+export default function AccountTable({ accounts, total, filter, search, sort, order, onFilter, onSearch, onSort, onDeleted }: Props) {
   const navigate = useNavigate()
   const [confirmId, setConfirmId] = useState<string | null>(null)
 
@@ -224,7 +225,7 @@ export default function AccountTable({ accounts, filter, search, sort, order, on
         </table>
         </div>
       </div>
-      <div className="mt-2.5 text-[11px] text-[var(--t4)] text-right pr-1 font-mono">{accounts.length} accounts</div>
+      <div className="mt-2.5 text-[11px] text-[var(--t4)] text-right pr-1 font-mono">{total ?? accounts.length} accounts</div>
     </div>
   )
 }

@@ -13,9 +13,9 @@ async function post(path: string, body: unknown) {
 
 export const api = {
   accounts: {
-    list: (params?: { filter?: string; search?: string; sort?: string; order?: string }) => {
+    list: (params?: { filter?: string; search?: string; sort?: string; order?: string; page?: number; limit?: number }) => {
       const q = new URLSearchParams(
-        Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v)) as Record<string, string>
+        Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v != null && v !== '')) as Record<string, string>
       ).toString()
       return get<{ accounts: Account[]; total: number }>(`/api/accounts${q ? '?' + q : ''}`)
     },
@@ -30,7 +30,12 @@ export const api = {
         .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),
   },
   subscriptions: {
-    list: () => get<{ subscriptions: SubscriptionDetail[]; total: number }>('/api/subscriptions'),
+    list: (params?: { search?: string; page?: number; limit?: number }) => {
+      const q = new URLSearchParams(
+        Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v != null && v !== '')) as Record<string, string>
+      ).toString()
+      return get<{ subscriptions: SubscriptionDetail[]; total: number }>(`/api/subscriptions${q ? '?' + q : ''}`)
+    },
     create: (body: Record<string, unknown>) => post('/api/subscriptions', body),
     update: (id: string, body: Record<string, unknown>) =>
       fetch(`/api/subscriptions/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -40,8 +45,15 @@ export const api = {
         .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),
   },
   contacts: {
-    list: (accountId?: string) =>
-      get<{ contacts: Contact[]; total: number }>(`/api/contacts${accountId ? '?account_id=' + accountId : ''}`),
+    list: (params?: { accountId?: string; search?: string; page?: number; limit?: number }) => {
+      const q = new URLSearchParams(
+        Object.fromEntries(
+          Object.entries({ account_id: params?.accountId, search: params?.search, page: params?.page, limit: params?.limit })
+            .filter(([, v]) => v != null && v !== '')
+        ) as Record<string, string>
+      ).toString()
+      return get<{ contacts: Contact[]; total: number }>(`/api/contacts${q ? '?' + q : ''}`)
+    },
     create: (body: Record<string, unknown>) => post('/api/contacts', body),
     update: (id: string, body: Record<string, unknown>) =>
       fetch(`/api/contacts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })

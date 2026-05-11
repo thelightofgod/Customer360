@@ -49,7 +49,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
     }).catch(console.error)
 
     if (!prefilledAccount && !isEdit) {
-      api.accounts.list({ filter: 'active' }).then(d => setAccounts(d.accounts)).catch(console.error)
+      api.accounts.list({ filter: 'active', limit: 999 }).then(d => setAccounts(d.accounts)).catch(console.error)
     }
   }, [])
 

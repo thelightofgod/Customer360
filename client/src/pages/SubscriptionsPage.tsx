@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Layout from '@/components/Layout'
 import AddSubscriptionModal from '@/components/AddSubscriptionModal'
+import Pagination from '@/components/ui/pagination'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -9,20 +10,36 @@ import type { SubscriptionDetail } from '@/types'
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { fmtCurrency, categoryVariant } from '@/lib/utils'
 
+const PAGE_LIMIT = 20
+
 export default function SubscriptionsPage() {
   const [subs, setSubs] = useState<SubscriptionDetail[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [editingSub, setEditingSub] = useState<SubscriptionDetail | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function fetchSubs() {
+  function fetchSubs(p = page, s = debouncedSearch) {
     setLoading(true)
-    api.subscriptions.list().then(d => setSubs(d.subscriptions)).catch(console.error).finally(() => setLoading(false))
+    api.subscriptions.list({ search: s, page: p, limit: PAGE_LIMIT })
+      .then(d => { setSubs(d.subscriptions); setTotal(d.total) })
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchSubs() }, [])
+  useEffect(() => { fetchSubs(page, debouncedSearch) }, [page, debouncedSearch])
+
+  function handleSearch(val: string) {
+    setSearch(val)
+    setPage(1)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setDebouncedSearch(val), 300)
+  }
 
   async function handleDelete(id: string) {
     try {
@@ -35,14 +52,7 @@ export default function SubscriptionsPage() {
     }
   }
 
-  const filtered = search
-    ? subs.filter(s =>
-        (s.product_name || '').toLowerCase().includes(search.toLowerCase()) ||
-        (s.account_name || '').toLowerCase().includes(search.toLowerCase()) ||
-        (s.category || '').toLowerCase().includes(search.toLowerCase())
-      )
-    : subs
-
+  const filtered = subs
   const totalValue = filtered.reduce((sum, s) => sum + s.total_price, 0)
 
   return (
@@ -51,9 +61,7 @@ export default function SubscriptionsPage() {
         <div>
           <h1 className="text-xl font-bold text-[var(--t1)] tracking-tight">Subscriptions</h1>
           <p className="text-sm text-[var(--t4)] mt-0.5">
-            {subs.length} subscriptions ·{' '}
-            <span className="font-mono font-semibold" style={{ color: 'var(--green)' }}>{fmtCurrency(totalValue)}</span>
-            {' '}total
+            {total} subscriptions
           </p>
         </div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>
@@ -66,7 +74,7 @@ export default function SubscriptionsPage() {
         <Input
           placeholder="Search by product, account, category..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => handleSearch(e.target.value)}
           className="pl-8 w-full sm:max-w-sm"
         />
       </div>
@@ -172,6 +180,8 @@ export default function SubscriptionsPage() {
           </div>
         )}
       </div>
+
+      <Pagination page={page} total={total} limit={PAGE_LIMIT} onChange={setPage} />
 
       {showAdd && (
         <AddSubscriptionModal

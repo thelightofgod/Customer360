@@ -3,10 +3,11 @@ import { mongoRepository as repo } from '../db/mongoRepository'
 
 const router = Router()
 
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const subscriptions = await repo.getAllSubscriptions()
-    res.json({ subscriptions, total: subscriptions.length })
+    const { search = '', page = '1', limit = '20' } = req.query as Record<string, string>
+    const result = await repo.getAllSubscriptions(search, parseInt(page), parseInt(limit))
+    res.json(result)
   } catch (e) {
     res.status(500).json({ error: String(e) })
   }

@@ -45,7 +45,7 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
 
   useEffect(() => {
     if (!prefilledAccount && !isEdit) {
-      api.accounts.list({ filter: 'active' }).then(d => setAccounts(d.accounts)).catch(console.error)
+      api.accounts.list({ filter: 'active', limit: 999 }).then(d => setAccounts(d.accounts)).catch(console.error)
     }
   }, [prefilledAccount, isEdit])
 

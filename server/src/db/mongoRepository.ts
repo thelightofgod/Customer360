@@ -74,7 +74,10 @@ function docToAccount(doc: any, subs: any[]): Account {
 }
 
 export const mongoRepository = {
-  async getAccounts(filter: string, search: string, sort: string, order: string): Promise<Account[]> {
+  async getAccounts(
+    filter: string, search: string, sort: string, order: string,
+    page = 1, limit = 20
+  ): Promise<{ accounts: Account[]; total: number }> {
     const db = getMongo()
     const [rawAccounts, rawSubs] = await Promise.all([
       db.collection('Accounts').find({}).toArray(),
@@ -102,11 +105,13 @@ export const mongoRepository = {
     else if (sort === 'tickets') rows.sort((a, b) => (a.open_tickets - b.open_tickets) * sign)
     else if (sort === 'renewal') rows.sort((a, b) => (daysUntil(a.renewal_date) - daysUntil(b.renewal_date)) * sign)
 
-    return rows
+    const total = rows.length
+    const start = (page - 1) * limit
+    return { accounts: rows.slice(start, start + limit), total }
   },
 
   async getAccountsSummary(): Promise<AccountSummaryStats> {
-    const rows = await this.getAccounts('all', '', 'name', 'asc')
+    const { accounts: rows } = await this.getAccounts('all', '', 'name', 'asc', 1, 99999)
     const active = rows.filter(r => r.arr > 0)
     const upcoming = rows.filter(r => { const d = daysUntil(r.renewal_date); return d > 0 && d <= 120 }).length
     return {
@@ -260,20 +265,22 @@ export const mongoRepository = {
     return []
   },
 
-  async getContacts(accountId?: string): Promise<Contact[]> {
+  async getContacts(
+    accountId?: string, search?: string, page = 1, limit = 18
+  ): Promise<{ contacts: Contact[]; total: number }> {
     const db = getMongo()
     let query = {}
 
     if (accountId) {
       try {
         const acct = await db.collection('Accounts').findOne({ _id: new ObjectId(accountId) })
-        if (!acct) return []
+        if (!acct) return { contacts: [], total: 0 }
         query = { 'Account Name': acct['Account Name'] }
-      } catch { return [] }
+      } catch { return { contacts: [], total: 0 } }
     }
 
     const docs = await db.collection('Contacts').find(query).toArray()
-    return docs.map(c => ({
+    let results: Contact[] = docs.map(c => ({
       id: c._id.toHexString(),
       account_id: accountId || '',
       account_name: c['Account Name'] || '',
@@ -284,6 +291,19 @@ export const mongoRepository = {
       email: c['Email'] || null,
       phone: c['Phone'] || null,
     }))
+
+    if (search) {
+      const s = search.toLowerCase()
+      results = results.filter(c =>
+        c.name.toLowerCase().includes(s) ||
+        (c.account_name || '').toLowerCase().includes(s) ||
+        (c.role || '').toLowerCase().includes(s)
+      )
+    }
+
+    const total = results.length
+    const start = (page - 1) * limit
+    return { contacts: results.slice(start, start + limit), total }
   },
 
   async createContact(data: {
@@ -303,10 +323,12 @@ export const mongoRepository = {
     return result.insertedId.toHexString()
   },
 
-  async getAllSubscriptions(): Promise<SubscriptionDetail[]> {
+  async getAllSubscriptions(
+    search?: string, page = 1, limit = 20
+  ): Promise<{ subscriptions: SubscriptionDetail[]; total: number }> {
     const db = getMongo()
     const docs = await db.collection('Subscriptions').find({}).toArray()
-    return docs.map(s => ({
+    let results: SubscriptionDetail[] = docs.map(s => ({
       id: s._id.toHexString(),
       account_id: '',
       account_name: s['Account Name'] || '',
@@ -321,6 +343,19 @@ export const mongoRepository = {
       total_price: parseAmount(s['Total (€)']),
       is_active: 1,
     }))
+
+    if (search) {
+      const s = search.toLowerCase()
+      results = results.filter(sub =>
+        (sub.product_name || '').toLowerCase().includes(s) ||
+        (sub.account_name || '').toLowerCase().includes(s) ||
+        (sub.category || '').toLowerCase().includes(s)
+      )
+    }
+
+    const total = results.length
+    const start = (page - 1) * limit
+    return { subscriptions: results.slice(start, start + limit), total }
   },
 
   async createSubscription(data: {

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Layout from '@/components/Layout'
 import AddContactModal from '@/components/AddContactModal'
+import Pagination from '@/components/ui/pagination'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -20,20 +21,36 @@ const TYPE_COLORS: Record<string, string> = {
   general: '#1ad0e8',
 }
 
+const PAGE_LIMIT = 18
+
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function fetchContacts() {
+  function fetchContacts(p = page, s = debouncedSearch) {
     setLoading(true)
-    api.contacts.list().then(d => setContacts(d.contacts)).catch(console.error).finally(() => setLoading(false))
+    api.contacts.list({ search: s, page: p, limit: PAGE_LIMIT })
+      .then(d => { setContacts(d.contacts); setTotal(d.total) })
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchContacts() }, [])
+  useEffect(() => { fetchContacts(page, debouncedSearch) }, [page, debouncedSearch])
+
+  function handleSearch(val: string) {
+    setSearch(val)
+    setPage(1)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setDebouncedSearch(val), 300)
+  }
 
   async function handleDelete(id: string) {
     try {
@@ -46,20 +63,14 @@ export default function ContactsPage() {
     }
   }
 
-  const filtered = search
-    ? contacts.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        (c.account_name || '').toLowerCase().includes(search.toLowerCase()) ||
-        (c.role || '').toLowerCase().includes(search.toLowerCase())
-      )
-    : contacts
+  const filtered = contacts
 
   return (
     <Layout>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
         <div>
           <h1 className="text-xl font-bold text-[var(--t1)] tracking-tight">Contacts</h1>
-          <p className="text-sm text-[var(--t4)] mt-0.5">{contacts.length} contacts across all accounts</p>
+          <p className="text-sm text-[var(--t4)] mt-0.5">{total} contacts across all accounts</p>
         </div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>
           <Plus className="w-3.5 h-3.5" /> New Contact
@@ -71,7 +82,7 @@ export default function ContactsPage() {
         <Input
           placeholder="Search by name, account, role..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => handleSearch(e.target.value)}
           className="pl-8 w-full sm:max-w-sm"
         />
       </div>
@@ -167,6 +178,8 @@ export default function ContactsPage() {
           )
         })}
       </div>
+
+      <Pagination page={page} total={total} limit={PAGE_LIMIT} onChange={setPage} />
 
       {showAdd && (
         <AddContactModal

@@ -5,9 +5,9 @@ const router = Router()
 
 router.get('/', async (req, res) => {
   try {
-    const { account_id } = req.query as Record<string, string>
-    const contacts = await repo.getContacts(account_id)
-    res.json({ contacts, total: contacts.length })
+    const { account_id, search = '', page = '1', limit = '18' } = req.query as Record<string, string>
+    const result = await repo.getContacts(account_id, search, parseInt(page), parseInt(limit))
+    res.json(result)
   } catch (e) {
     res.status(500).json({ error: String(e) })
   }

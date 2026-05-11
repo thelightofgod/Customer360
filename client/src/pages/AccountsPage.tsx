@@ -3,14 +3,19 @@ import Layout from '@/components/Layout'
 import SummaryCards from '@/components/SummaryCards'
 import AccountTable from '@/components/AccountTable'
 import AddAccountModal from '@/components/AddAccountModal'
+import Pagination from '@/components/ui/pagination'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import type { Account, AccountSummaryStats } from '@/types'
 import { Plus } from 'lucide-react'
 
+const PAGE_LIMIT = 20
+
 export default function AccountsPage() {
   const [stats, setStats] = useState<AccountSummaryStats | null>(null)
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -26,18 +31,24 @@ export default function AccountsPage() {
 
   function handleSearch(val: string) {
     setSearch(val)
+    setPage(1)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => setDebouncedSearch(val), 300)
+  }
+
+  function handleFilter(val: string) {
+    setFilter(val)
+    setPage(1)
   }
 
   const fetchAccounts = useCallback(() => {
     setLoading(true)
     api.accounts
-      .list({ filter, search: debouncedSearch, sort, order })
-      .then(d => setAccounts(d.accounts))
+      .list({ filter, search: debouncedSearch, sort, order, page, limit: PAGE_LIMIT })
+      .then(d => { setAccounts(d.accounts); setTotal(d.total) })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [filter, debouncedSearch, sort, order])
+  }, [filter, debouncedSearch, sort, order, page])
 
   useEffect(() => {
     fetchAccounts()
@@ -46,6 +57,7 @@ export default function AccountsPage() {
   function handleSort(col: string) {
     if (sort === col) setOrder(o => (o === 'asc' ? 'desc' : 'asc'))
     else { setSort(col); setOrder('asc') }
+    setPage(1)
   }
 
   function handleCreated() {
@@ -66,15 +78,17 @@ export default function AccountsPage() {
       <div className={loading ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
         <AccountTable
           accounts={accounts}
+          total={total}
           filter={filter}
           search={search}
           sort={sort}
           order={order}
-          onFilter={setFilter}
+          onFilter={handleFilter}
           onSearch={handleSearch}
           onSort={handleSort}
           onDeleted={handleCreated}
         />
+        <Pagination page={page} total={total} limit={PAGE_LIMIT} onChange={setPage} />
       </div>
     </Layout>
     {showAdd && <AddAccountModal onClose={() => setShowAdd(false)} onCreated={handleCreated} />}
