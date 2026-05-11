@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 import type { Account, Product, SubscriptionDetail } from '@/types'
 
 interface Props {
@@ -82,6 +83,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
           unit: selectedProduct?.unit_type || initialData!.unit_label,
           unitPrice: Number(form.unitPrice),
         })
+        toast.success('Subscription updated')
       } else {
         await api.subscriptions.create({
           accountName: form.accountName,
@@ -93,9 +95,11 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
           unitPrice: Number(form.unitPrice),
           notes: form.notes || undefined,
         })
+        toast.success('Subscription added')
       }
       onCreated()
     } catch (e) {
+      toast.error('Failed to save subscription')
       setError(String(e))
     } finally {
       setSaving(false)

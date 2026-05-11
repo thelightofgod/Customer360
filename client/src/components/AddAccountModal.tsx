@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 import type { AccountDetail } from '@/types'
 
 interface Props {
@@ -74,6 +75,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
           avgResolution: form.avgResolution || undefined,
           notes: form.notes || undefined,
         })
+        toast.success('Changes saved')
       } else {
         await api.accounts.create({
           name: form.name.trim(),
@@ -90,9 +92,11 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
           avgResolution: form.avgResolution || undefined,
           notes: form.notes || undefined,
         })
+        toast.success('Account created')
       }
       onCreated()
     } catch (e) {
+      toast.error('Failed to save account')
       setError(String(e))
     } finally {
       setSaving(false)

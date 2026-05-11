@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 import type { Contact } from '@/types'
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 
@@ -55,10 +56,12 @@ export default function ContactsPage() {
   async function handleDelete(id: string) {
     try {
       await api.contacts.delete(id)
+      toast.success('Contact deleted')
       setDeletingId(null)
       fetchContacts()
     } catch (e) {
       console.error('Failed to delete contact', e)
+      toast.error('Failed to delete contact')
       setDeletingId(null)
     }
   }

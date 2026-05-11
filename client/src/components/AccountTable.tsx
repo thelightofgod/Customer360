@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Search, Trash2 } from 'lucide-react'
 import { fmtCurrency, daysUntil, tierVariant } from '@/lib/utils'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -41,9 +42,15 @@ export default function AccountTable({ accounts, total, filter, search, sort, or
   async function handleDelete(e: React.MouseEvent, id: string) {
     e.stopPropagation()
     if (confirmId !== id) { setConfirmId(id); return }
-    await api.accounts.delete(id)
-    setConfirmId(null)
-    onDeleted?.()
+    try {
+      await api.accounts.delete(id)
+      toast.success('Account deleted')
+      setConfirmId(null)
+      onDeleted?.()
+    } catch {
+      toast.error('Failed to delete account')
+      setConfirmId(null)
+    }
   }
 
   function sortArrow(col: string) {

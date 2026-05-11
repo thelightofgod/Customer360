@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 import type { Account, Contact } from '@/types'
 
 interface Props {
@@ -67,6 +68,7 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
           email: form.email || '',
           phone: form.phone || '',
         })
+        toast.success('Contact updated')
       } else {
         await api.contacts.create({
           accountName: form.accountName,
@@ -77,9 +79,11 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
           phone: form.phone || undefined,
           notes: form.notes || undefined,
         })
+        toast.success('Contact added')
       }
       onSaved()
     } catch (e) {
+      toast.error('Failed to save contact')
       setError(String(e))
     } finally {
       setSaving(false)

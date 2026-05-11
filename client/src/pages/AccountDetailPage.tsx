@@ -13,6 +13,7 @@ import NotesTab from '@/components/detail/NotesTab'
 import AddContactModal from '@/components/AddContactModal'
 import AddSubscriptionModal from '@/components/AddSubscriptionModal'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 import { fmtCurrency, tierVariant, licenseModelVariant } from '@/lib/utils'
 import type { AccountDetail, Contact, SubscriptionDetail } from '@/types'
 import AddAccountModal from '@/components/AddAccountModal'
@@ -42,18 +43,22 @@ export default function AccountDetailPage() {
   async function handleDeleteContact(contactId: string) {
     try {
       await api.contacts.delete(contactId)
+      toast.success('Contact deleted')
       refreshAccount()
     } catch (e) {
       console.error('Failed to delete contact', e)
+      toast.error('Failed to delete contact')
     }
   }
 
   async function handleDeleteSub(subId: string) {
     try {
       await api.subscriptions.delete(subId)
+      toast.success('Subscription deleted')
       refreshAccount()
     } catch (e) {
       console.error('Failed to delete subscription', e)
+      toast.error('Failed to delete subscription')
     }
   }
 

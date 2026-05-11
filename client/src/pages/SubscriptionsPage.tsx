@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 import type { SubscriptionDetail } from '@/types'
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { fmtCurrency, categoryVariant } from '@/lib/utils'
@@ -44,10 +45,12 @@ export default function SubscriptionsPage() {
   async function handleDelete(id: string) {
     try {
       await api.subscriptions.delete(id)
+      toast.success('Subscription deleted')
       setDeletingId(null)
       fetchSubs()
     } catch (e) {
       console.error('Failed to delete subscription', e)
+      toast.error('Failed to delete subscription')
       setDeletingId(null)
     }
   }

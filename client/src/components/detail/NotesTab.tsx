@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { AccountDetail } from '@/types'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/lib/toast'
 import { Pencil, Check, X } from 'lucide-react'
 
 interface Props { account: AccountDetail }
@@ -24,7 +25,9 @@ export default function NotesTab({ account }: Props) {
       if (!r.ok) throw new Error('Failed to save')
       setSaved(text)
       setEditing(false)
+      toast.success('Notes saved')
     } catch {
+      toast.error('Could not save notes')
       setError('Could not save notes. Please try again.')
     } finally {
       setSaving(false)

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import ToastContainer from '@/components/ui/toast'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
@@ -108,6 +109,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <main className="max-w-[1380px] mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6 pb-16">
         {children}
       </main>
+      <ToastContainer />
     </div>
   )
 }
