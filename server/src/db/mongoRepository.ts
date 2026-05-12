@@ -5,6 +5,29 @@ import type {
   Activity, Contact, Product, ProductDetail, Ticket, SubscriptionDetail
 } from '../types'
 
+// ---------------------------------------------------------------------------
+// Raw-collection cache — invalidated on every write, avoids reloading all
+// accounts + subscriptions on every list/summary request.
+// ---------------------------------------------------------------------------
+interface RawCache { accounts: any[]; subs: any[]; ts: number }
+let rawCache: RawCache | null = null
+const CACHE_TTL_MS = 60_000 // safety-net TTL; writes always invalidate first
+
+async function getRawCollections() {
+  if (rawCache && Date.now() - rawCache.ts < CACHE_TTL_MS) return rawCache
+  const db = getMongo()
+  const [accounts, subs] = await Promise.all([
+    db.collection('Accounts').find({}).toArray(),
+    db.collection('Subscriptions').find({}).toArray(),
+  ])
+  rawCache = { accounts, subs, ts: Date.now() }
+  return rawCache
+}
+
+function invalidateCache() { rawCache = null }
+
+// ---------------------------------------------------------------------------
+
 // "285,000" → 285000   |   "3,200" → 3200   |   42 → 42
 function parseAmount(val: unknown): number {
   if (typeof val === 'number') return val
@@ -78,11 +101,7 @@ export const mongoRepository = {
     filter: string, search: string, sort: string, order: string,
     page = 1, limit = 20
   ): Promise<{ accounts: Account[]; total: number }> {
-    const db = getMongo()
-    const [rawAccounts, rawSubs] = await Promise.all([
-      db.collection('Accounts').find({}).toArray(),
-      db.collection('Subscriptions').find({}).toArray(),
-    ])
+    const { accounts: rawAccounts, subs: rawSubs } = await getRawCollections()
 
     let rows = rawAccounts.map(doc => docToAccount(doc, rawSubs))
 
@@ -111,7 +130,8 @@ export const mongoRepository = {
   },
 
   async getAccountsSummary(): Promise<AccountSummaryStats> {
-    const { accounts: rows } = await this.getAccounts('all', '', 'name', 'asc', 1, 99999)
+    const { accounts: rawAccounts, subs: rawSubs } = await getRawCollections()
+    const rows = rawAccounts.map(doc => docToAccount(doc, rawSubs))
     const active = rows.filter(r => r.arr > 0)
     const upcoming = rows.filter(r => { const d = daysUntil(r.renewal_date); return d > 0 && d <= 120 }).length
     return {
@@ -323,6 +343,7 @@ export const mongoRepository = {
     return result.insertedId.toHexString()
   },
 
+
   async getAllSubscriptions(
     search?: string, page = 1, limit = 20
   ): Promise<{ subscriptions: SubscriptionDetail[]; total: number }> {
@@ -376,6 +397,7 @@ export const mongoRepository = {
       'Notes': data.notes || '',
     }
     const result = await getMongo().collection('Subscriptions').insertOne(doc)
+    invalidateCache()
     return result.insertedId.toHexString()
   },
 
@@ -408,11 +430,13 @@ export const mongoRepository = {
       { _id: new ObjectId(id) },
       { $set: update }
     )
+    invalidateCache()
     return result.matchedCount === 1
   },
 
   async deleteSubscription(id: string): Promise<boolean> {
     const result = await getMongo().collection('Subscriptions').deleteOne({ _id: new ObjectId(id) })
+    invalidateCache()
     return result.deletedCount === 1
   },
 
@@ -461,6 +485,7 @@ export const mongoRepository = {
       { _id: new ObjectId(id) },
       { $set: update }
     )
+    invalidateCache()
     return result.matchedCount === 1
   },
 
@@ -469,11 +494,16 @@ export const mongoRepository = {
     const doc = await db.collection('Accounts').findOne({ _id: new ObjectId(id) })
     if (!doc) return false
     const name: string = doc['Account Name']
-    await Promise.all([
-      db.collection('Contacts').deleteMany({ 'Account Name': name }),
-      db.collection('Subscriptions').deleteMany({ 'Account Name': name }),
-    ])
+    // Delete account first so a crash leaves orphaned children rather than a
+    // child-less account document.
     const result = await db.collection('Accounts').deleteOne({ _id: new ObjectId(id) })
+    if (result.deletedCount === 1) {
+      await Promise.all([
+        db.collection('Contacts').deleteMany({ 'Account Name': name }),
+        db.collection('Subscriptions').deleteMany({ 'Account Name': name }),
+      ])
+      invalidateCache()
+    }
     return result.deletedCount === 1
   },
 
@@ -498,6 +528,7 @@ export const mongoRepository = {
       'Notes': data.notes || '',
     }
     const result = await getMongo().collection('Accounts').insertOne(doc)
+    invalidateCache()
     return result.insertedId.toHexString()
   },
 }

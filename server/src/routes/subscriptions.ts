@@ -6,7 +6,7 @@ const router = Router()
 router.get('/', async (req, res) => {
   try {
     const { search = '', page = '1', limit = '20' } = req.query as Record<string, string>
-    const result = await repo.getAllSubscriptions(search, parseInt(page), parseInt(limit))
+    const result = await repo.getAllSubscriptions(search, parseInt(page) || 1, parseInt(limit) || 20)
     res.json(result)
   } catch (e) {
     res.status(500).json({ error: String(e) })
