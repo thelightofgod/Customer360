@@ -1,6 +1,4 @@
 import { Router } from 'express'
-import { ObjectId } from 'mongodb'
-import { getMongo } from '../db/mongo'
 import { mongoRepository as repo } from '../db/mongoRepository'
 
 const router = Router()
@@ -28,18 +26,6 @@ router.post('/', async (req, res) => {
     if (!req.body?.name?.trim()) return res.status(400).json({ error: 'Account name is required' })
     const id = await repo.createAccount(req.body)
     res.status(201).json({ id })
-  } catch (e) {
-    res.status(500).json({ error: String(e) })
-  }
-})
-
-router.patch('/:id/notes', async (req, res) => {
-  try {
-    await getMongo().collection('Accounts').updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: { Notes: req.body.notes ?? '' } }
-    )
-    res.json({ success: true })
   } catch (e) {
     res.status(500).json({ error: String(e) })
   }

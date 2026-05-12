@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { AccountDetail } from '@/types'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
+import { api } from '@/lib/api'
 import { Pencil, Check, X } from 'lucide-react'
 
 interface Props { account: AccountDetail }
@@ -17,12 +18,7 @@ export default function NotesTab({ account }: Props) {
     setSaving(true)
     setError('')
     try {
-      const r = await fetch(`/api/accounts/${account.id}/notes`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: text }),
-      })
-      if (!r.ok) throw new Error('Failed to save')
+      await api.accounts.update(account.id, { notes: text })
       setSaved(text)
       setEditing(false)
       toast.success('Notes saved')
