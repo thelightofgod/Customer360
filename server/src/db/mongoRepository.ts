@@ -7,20 +7,21 @@ import type {
 
 // ---------------------------------------------------------------------------
 // Raw-collection cache — invalidated on every write, avoids reloading all
-// accounts + subscriptions on every list/summary request.
+// accounts + subscriptions + contacts on every list/summary request.
 // ---------------------------------------------------------------------------
-interface RawCache { accounts: any[]; subs: any[]; ts: number }
+interface RawCache { accounts: any[]; subs: any[]; contacts: any[]; ts: number }
 let rawCache: RawCache | null = null
 const CACHE_TTL_MS = 60_000 // safety-net TTL; writes always invalidate first
 
 async function getRawCollections() {
   if (rawCache && Date.now() - rawCache.ts < CACHE_TTL_MS) return rawCache
   const db = getMongo()
-  const [accounts, subs] = await Promise.all([
+  const [accounts, subs, contacts] = await Promise.all([
     db.collection('Accounts').find({}).toArray(),
     db.collection('Subscriptions').find({}).toArray(),
+    db.collection('Contacts').find({}).toArray(),
   ])
-  rawCache = { accounts, subs, ts: Date.now() }
+  rawCache = { accounts, subs, contacts, ts: Date.now() }
   return rawCache
 }
 
@@ -288,29 +289,30 @@ export const mongoRepository = {
   async getContacts(
     accountId?: string, search?: string, page = 1, limit = 18
   ): Promise<{ contacts: Contact[]; total: number }> {
-    const db = getMongo()
-    let query = {}
+    const { accounts: rawAccounts, contacts: rawContacts } = await getRawCollections()
 
+    let accountName: string | undefined
     if (accountId) {
-      try {
-        const acct = await db.collection('Accounts').findOne({ _id: new ObjectId(accountId) })
-        if (!acct) return { contacts: [], total: 0 }
-        query = { 'Account Name': acct['Account Name'] }
-      } catch { return { contacts: [], total: 0 } }
+      const acct = rawAccounts.find(a => {
+        try { return a._id.toHexString() === accountId } catch { return false }
+      })
+      if (!acct) return { contacts: [], total: 0 }
+      accountName = acct['Account Name'] as string
     }
 
-    const docs = await db.collection('Contacts').find(query).toArray()
-    let results: Contact[] = docs.map(c => ({
-      id: c._id.toHexString(),
-      account_id: accountId || '',
-      account_name: c['Account Name'] || '',
-      name: c['Contact Name'] || '',
-      role: c['Role / Title'] || '',
-      initials: initials(c['Contact Name'] || ''),
-      contact_type: (c['Contact Type'] || 'general').toLowerCase(),
-      email: c['Email'] || null,
-      phone: c['Phone'] || null,
-    }))
+    let results: Contact[] = rawContacts
+      .filter(c => !accountName || c['Account Name'] === accountName)
+      .map(c => ({
+        id: c._id.toHexString(),
+        account_id: accountId || '',
+        account_name: c['Account Name'] || '',
+        name: c['Contact Name'] || '',
+        role: c['Role / Title'] || '',
+        initials: initials(c['Contact Name'] || ''),
+        contact_type: (c['Contact Type'] || 'general').toLowerCase(),
+        email: c['Email'] || null,
+        phone: c['Phone'] || null,
+      }))
 
     if (search) {
       const s = search.toLowerCase()
@@ -340,6 +342,7 @@ export const mongoRepository = {
       'Notes': data.notes || '',
     }
     const result = await getMongo().collection('Contacts').insertOne(doc)
+    invalidateCache()
     return result.insertedId.toHexString()
   },
 
@@ -347,9 +350,8 @@ export const mongoRepository = {
   async getAllSubscriptions(
     search?: string, page = 1, limit = 20
   ): Promise<{ subscriptions: SubscriptionDetail[]; total: number }> {
-    const db = getMongo()
-    const docs = await db.collection('Subscriptions').find({}).toArray()
-    let results: SubscriptionDetail[] = docs.map(s => ({
+    const { subs: rawSubs } = await getRawCollections()
+    let results: SubscriptionDetail[] = rawSubs.map(s => ({
       id: s._id.toHexString(),
       account_id: '',
       account_name: s['Account Name'] || '',
@@ -455,11 +457,13 @@ export const mongoRepository = {
       { _id: new ObjectId(id) },
       { $set: update }
     )
+    invalidateCache()
     return result.matchedCount === 1
   },
 
   async deleteContact(id: string): Promise<boolean> {
     const result = await getMongo().collection('Contacts').deleteOne({ _id: new ObjectId(id) })
+    invalidateCache()
     return result.deletedCount === 1
   },
 
