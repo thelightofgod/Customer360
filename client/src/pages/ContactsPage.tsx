@@ -66,8 +66,6 @@ export default function ContactsPage() {
     }
   }
 
-  const filtered = contacts
-
   return (
     <Layout>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
@@ -91,13 +89,13 @@ export default function ContactsPage() {
       </div>
 
       <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 transition-opacity ${loading ? 'opacity-50' : ''}`}>
-        {filtered.length === 0 && !loading && (
+        {contacts.length === 0 && !loading && (
           <div className="col-span-3 text-center py-20 text-[var(--t4)]">
             <div className="text-3xl mb-3 opacity-40">👥</div>
             No contacts found
           </div>
         )}
-        {filtered.map(c => {
+        {contacts.map(c => {
           const accent = TYPE_COLORS[c.contact_type] ?? 'var(--t4)'
           return (
             <div

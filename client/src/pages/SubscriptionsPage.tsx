@@ -55,8 +55,7 @@ export default function SubscriptionsPage() {
     }
   }
 
-  const filtered = subs
-  const totalValue = filtered.reduce((sum, s) => sum + s.total_price, 0)
+  const totalValue = subs.reduce((sum, s) => sum + s.total_price, 0)
 
   return (
     <Layout>
@@ -106,14 +105,14 @@ export default function SubscriptionsPage() {
           <span />
         </div>
 
-        {filtered.length === 0 && !loading && (
+        {subs.length === 0 && !loading && (
           <div className="text-center py-20 text-[var(--t4)]">
             <div className="text-3xl mb-3 opacity-40">📦</div>
             No subscriptions found
           </div>
         )}
 
-        {filtered.map(s => (
+        {subs.map(s => (
           <div
             key={s.id}
             className="grid grid-cols-[1.5fr_1fr_120px_90px_100px_110px_72px] gap-1 items-center px-5 py-3.5 border-b border-white/[0.025] last:border-0 text-sm transition-all duration-150"
@@ -168,7 +167,7 @@ export default function SubscriptionsPage() {
 
         </div>
         </div>
-        {filtered.length > 0 && (
+        {subs.length > 0 && (
           <div
             className="flex justify-between items-center px-5 py-4"
             style={{ background: 'rgba(22, 38, 56, 0.60)', borderTop: '1px solid var(--brd)' }}

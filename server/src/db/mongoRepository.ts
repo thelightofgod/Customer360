@@ -196,32 +196,7 @@ export const mongoRepository = {
       phone: c['Phone'] || null,
     }))
 
-    const totalLicenses = subscriptions.filter(s => s.category === 'License').reduce((sum, s) => sum + s.quantity, 0)
-    const totalContractValue = subscriptions.reduce((sum, s) => sum + s.total_price, 0)
-    const arr = parseAmount(doc['ARR (€)'])
-
-    const account: Account = {
-      id,
-      name,
-      sector: doc['Sector / Industry'] || '',
-      color: accountColor(name),
-      edition: doc['Edition'] || '',
-      tier: doc['Tier'] || '',
-      csm: doc['CSM Assigned'] || '',
-      nps: typeof doc['NPS (1-10)'] === 'number' ? doc['NPS (1-10)'] : null,
-      sla_compliance: typeof doc['SLA Compliance %'] === 'number' ? doc['SLA Compliance %'] : null,
-      avg_resolution: doc['Avg Resolution'] || null,
-      open_tickets: 0,
-      license_model: doc['License Model'] || null,
-      arr,
-      contract_start: toDateStr(doc['Contract Start']),
-      renewal_date: toDateStr(doc['Renewal Date']),
-      contract_status: arr > 0 ? 'active' : 'prospect',
-      total_licenses: totalLicenses,
-      total_contract_value: totalContractValue,
-    }
-
-    return { ...account, contacts, tickets: [], activities: [], subscriptions, notes: doc['Notes'] || '' }
+    return { ...docToAccount(doc, rawSubs), contacts, tickets: [], activities: [], subscriptions, notes: doc['Notes'] || '' }
   },
 
   async getProducts(): Promise<Product[]> {

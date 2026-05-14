@@ -221,7 +221,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
 
         <div className="px-6 py-4 border-t border-[var(--brd)] flex justify-end gap-2">
           <Button type="button" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button variant="primary" onClick={handleSubmit as any} disabled={saving}>
+          <Button variant="primary" type="submit" disabled={saving}>
             {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Account'}
           </Button>
         </div>

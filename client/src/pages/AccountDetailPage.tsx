@@ -231,8 +231,7 @@ export default function AccountDetailPage() {
       </Tabs>
     </Layout>
 
-    <>
-      {showEditAccount && (
+    {showEditAccount && (
         <AddAccountModal
           initialData={account}
           onClose={() => setShowEditAccount(false)}
@@ -267,7 +266,6 @@ export default function AccountDetailPage() {
           onCreated={() => { setEditingSub(null); refreshAccount() }}
         />
       )}
-    </>
     </>
   )
 }
