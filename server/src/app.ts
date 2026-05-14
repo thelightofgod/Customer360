@@ -1,4 +1,5 @@
 import express from 'express'
+import type { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import { getMongo } from './db/mongo'
 import accountsRouter from './routes/accounts'
@@ -24,5 +25,11 @@ app.use('/api/tickets', ticketsRouter)
 app.use('/api/contacts', contactsRouter)
 app.use('/api/activities', activitiesRouter)
 app.use('/api/subscriptions', subscriptionsRouter)
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err)
+  res.status(500).json({ error: 'Internal server error' })
+})
 
 export default app

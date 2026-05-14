@@ -1,63 +1,64 @@
 import { Router } from 'express'
+import type { NextFunction, Request, Response } from 'express'
 import { mongoRepository as repo } from '../db/mongoRepository'
 
 const router = Router()
 
-router.get('/summary', async (_req, res) => {
+router.get('/summary', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await repo.getAccountsSummary())
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { filter = 'all', search = '', sort = 'name', order = 'asc', page = '1', limit = '20' } = req.query as Record<string, string>
     const result = await repo.getAccounts(filter, search, sort, order, parseInt(page) || 1, parseInt(limit) || 20)
     res.json(result)
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.body?.name?.trim()) return res.status(400).json({ error: 'Account name is required' })
     const id = await repo.createAccount(req.body)
     res.status(201).json({ id })
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ok = await repo.updateAccount(req.params.id, req.body)
     if (!ok) return res.status(404).json({ error: 'Account not found' })
     res.json({ ok: true })
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ok = await repo.deleteAccount(req.params.id)
     if (!ok) return res.status(404).json({ error: 'Account not found' })
     res.json({ success: true })
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const account = await repo.getAccount(req.params.id)
     if (!account) return res.status(404).json({ error: 'Account not found' })
     res.json(account)
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 

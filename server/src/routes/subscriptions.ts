@@ -1,19 +1,20 @@
 import { Router } from 'express'
+import type { NextFunction, Request, Response } from 'express'
 import { mongoRepository as repo } from '../db/mongoRepository'
 
 const router = Router()
 
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { search = '', page = '1', limit = '20' } = req.query as Record<string, string>
     const result = await repo.getAllSubscriptions(search, parseInt(page) || 1, parseInt(limit) || 20)
     res.json(result)
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { accountName, productName, quantity, unitPrice } = req.body
     if (!accountName || !productName || !quantity || unitPrice == null)
@@ -21,27 +22,27 @@ router.post('/', async (req, res) => {
     const id = await repo.createSubscription(req.body)
     res.status(201).json({ id })
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ok = await repo.updateSubscription(req.params.id, req.body)
     if (!ok) return res.status(404).json({ error: 'Subscription not found' })
     res.json({ ok: true })
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const ok = await repo.deleteSubscription(req.params.id)
     if (!ok) return res.status(404).json({ error: 'Subscription not found' })
     res.json({ ok: true })
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    next(e)
   }
 })
 
