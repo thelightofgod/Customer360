@@ -55,7 +55,13 @@ export default function SubscriptionsPage() {
     }
   }
 
-  const totalValue = subs.reduce((sum, s) => sum + s.total_price, 0)
+  function annualValue(s: SubscriptionDetail): number {
+    if (s.payment_periods && s.payment_periods.length > 0)
+      return s.payment_periods.reduce((sum, p) => sum + p.amount, 0)
+    return s.total_price
+  }
+
+  const totalValue = subs.reduce((sum, s) => sum + annualValue(s), 0)
 
   return (
     <Layout>
@@ -101,7 +107,7 @@ export default function SubscriptionsPage() {
           <span className="text-center">Category</span>
           <span className="text-center">Qty</span>
           <span className="text-right">Unit Price</span>
-          <span className="text-right">Total</span>
+          <span className="text-right">Annual Value</span>
           <span />
         </div>
 
@@ -134,7 +140,7 @@ export default function SubscriptionsPage() {
               {s.quantity} <span className="text-[10px] text-[var(--t4)] font-normal">{s.unit_label}</span>
             </span>
             <span className="font-mono text-right text-[var(--t2)]">{fmtCurrency(s.unit_price)}</span>
-            <span className="font-mono font-bold text-right" style={{ color: 'var(--green)' }}>{fmtCurrency(s.total_price)}</span>
+            <span className="font-mono font-bold text-right" style={{ color: 'var(--green)' }}>{fmtCurrency(annualValue(s))}</span>
             <div className="flex items-center justify-end gap-1">
               {deletingId === s.id ? (
                 <>

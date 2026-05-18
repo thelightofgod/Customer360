@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb'
 import { getMongo } from './mongo'
 import type {
   Account, AccountDetail, AccountSummaryStats,
-  Activity, Contact, Product, ProductDetail, Ticket, SubscriptionDetail
+  Activity, Contact, Product, ProductDetail, Ticket, SubscriptionDetail, PaymentSchedule, Deal
 } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -94,6 +94,143 @@ function docToAccount(doc: any, subs: any[]): Account {
     contract_status: arr > 0 ? 'active' : 'prospect',
     total_licenses: totalLicenses,
     total_contract_value: totalContractValue,
+    address: doc['Address'] || null,
+    partner_name: doc['Partner Name'] || null,
+    partner_margin: doc['Partner Margin %'] != null ? parseAmount(doc['Partner Margin %']) || null : null,
+    partner_license_price: doc['Partner License Price (€)'] ? parseAmount(doc['Partner License Price (€)']) : null,
+    currency: doc['Currency'] || null,
+    invoice_date: toDateStr(doc['Invoice Date']),
+    payment_terms: doc['Payment Terms'] || null,
+    consulting_days: doc['Consulting Days'] || null,
+    training_info: doc['Training Info'] || null,
+  }
+}
+
+function docToDeal(doc: any): Deal {
+  const lines = (doc['Lines'] || []).map((l: any) => ({
+    product_name: l['Product Name'] || '',
+    category: l['Category'] || '',
+    product_group: l['Product Group'] || '',
+    quantity: typeof l['Quantity'] === 'number' ? l['Quantity'] : parseInt(l['Quantity']) || 0,
+    unit: l['Unit'] || '',
+    list_price: parseAmount(l['List Price (€)']),
+    unit_price: parseAmount(l['Unit Price (€)']),
+    total_price: parseAmount(l['Total (€)']),
+  }))
+  const payment_schedule = (doc['Payment Schedule'] || []).map((p: any) => ({
+    period_start: toDateStr(p['Period Start']) || '',
+    period_end: toDateStr(p['Period End']) || '',
+    amount: parseAmount(p['Amount (€)']),
+    invoice_date: toDateStr(p['Invoice Date']),
+  }))
+  const total_value = lines.reduce((sum: number, l: any) => sum + l.total_price, 0)
+  return {
+    id: doc._id.toHexString(),
+    account_name: doc['Account Name'] || '',
+    deal_type: doc['Deal Type'] || 'Yeni Satış',
+    deal_status: doc['Deal Status'] || 'Teklif',
+    contract_start: toDateStr(doc['Contract Start']),
+    contract_end: toDateStr(doc['Contract End']),
+    subscription_years: doc['Subscription Years'] ?? null,
+    finance_contact: doc['Finance Contact'] || null,
+    existing_commitment_end: toDateStr(doc['Existing Commitment End']),
+    remaining_months: doc['Remaining Months'] ?? null,
+    remaining_period_price: doc['Remaining Period Price (€)'] ? parseAmount(doc['Remaining Period Price (€)']) : null,
+    partner_name: doc['Partner Name'] || null,
+    partner_margin: doc['Partner Margin %'] != null ? parseAmount(doc['Partner Margin %']) || null : null,
+    partner_license_price: doc['Partner License Price (€)'] ? parseAmount(doc['Partner License Price (€)']) : null,
+    currency: doc['Currency'] || null,
+    invoice_date: toDateStr(doc['Invoice Date']),
+    payment_terms: doc['Payment Terms'] || null,
+    consulting_days: doc['Consulting Days'] || null,
+    training_info: doc['Training Info'] || null,
+    notes: doc['Notes'] || null,
+    total_value,
+    lines,
+    payment_schedule,
+    created_at: doc['Created At'] instanceof Date ? doc['Created At'].toISOString() : new Date().toISOString(),
+  }
+}
+
+function buildDealDoc(data: {
+  accountName: string; dealType: string; dealStatus: string
+  contractStart?: string; contractEnd?: string; subscriptionYears?: number | null
+  financeContact?: string; existingCommitmentEnd?: string
+  remainingMonths?: number | null; remainingPeriodPrice?: number | null
+  partnerName?: string; partnerMargin?: number | null; partnerLicensePrice?: number | null; currency?: string
+  invoiceDate?: string; paymentTerms?: string; consultingDays?: string; trainingInfo?: string; notes?: string
+  lines: Array<{ productName: string; category: string; productGroup: string; quantity: number; unit: string; listPrice: number; unitPrice: number }>
+  paymentSchedule: Array<{ periodStart: string; periodEnd: string; amount: number; invoiceDate?: string | null }>
+}): Record<string, unknown> {
+  return {
+    'Account Name': data.accountName,
+    'Deal Type': data.dealType,
+    'Deal Status': data.dealStatus,
+    'Contract Start': data.contractStart ? new Date(data.contractStart) : null,
+    'Contract End': data.contractEnd ? new Date(data.contractEnd) : null,
+    'Subscription Years': data.subscriptionYears ?? null,
+    'Finance Contact': data.financeContact || null,
+    'Existing Commitment End': data.existingCommitmentEnd ? new Date(data.existingCommitmentEnd) : null,
+    'Remaining Months': data.remainingMonths ?? null,
+    'Remaining Period Price (€)': data.remainingPeriodPrice != null ? String(data.remainingPeriodPrice) : null,
+    'Partner Name': data.partnerName || null,
+    'Partner Margin %': data.partnerMargin ?? null,
+    'Partner License Price (€)': data.partnerLicensePrice != null ? String(data.partnerLicensePrice) : null,
+    'Currency': data.currency || null,
+    'Invoice Date': data.invoiceDate ? new Date(data.invoiceDate) : null,
+    'Payment Terms': data.paymentTerms || null,
+    'Consulting Days': data.consultingDays || null,
+    'Training Info': data.trainingInfo || null,
+    'Notes': data.notes || null,
+    'Lines': data.lines.map(l => ({
+      'Product Name': l.productName,
+      'Category': l.category,
+      'Product Group': l.productGroup,
+      'Quantity': l.quantity,
+      'Unit': l.unit,
+      'List Price (€)': String(l.listPrice),
+      'Unit Price (€)': String(l.unitPrice),
+      'Total (€)': String(l.quantity * l.unitPrice),
+    })),
+    'Payment Schedule': data.paymentSchedule.map(p => ({
+      'Period Start': new Date(p.periodStart),
+      'Period End': new Date(p.periodEnd),
+      'Amount (€)': String(p.amount),
+      'Invoice Date': p.invoiceDate ? new Date(p.invoiceDate) : null,
+    })),
+  }
+}
+
+function docToSubscription(s: any, accountId = '', productMap?: Map<string, any>): SubscriptionDetail {
+  const prod = productMap?.get(s['Product Name'] as string)
+  const qty = typeof s['Quantity'] === 'number' ? s['Quantity'] : parseInt(s['Quantity']) || 0
+  const rawYears = s['Subscription Years']
+  return {
+    id: s._id.toHexString(),
+    account_id: accountId,
+    account_name: s['Account Name'] || '',
+    product_id: prod ? prod._id.toHexString() : '',
+    quantity: qty,
+    unit_label: s['Unit'] || '',
+    list_price: s['List Price (€)'] != null ? parseAmount(s['List Price (€)']) : null,
+    unit_price: parseAmount(s['Unit Price (€)']),
+    total_price: parseAmount(s['Total (€)']),
+    is_active: 1,
+    product_name: s['Product Name'] || '',
+    category: s['Category'] || '',
+    product_group: s['Product Group'] || '',
+    product_unit_type: s['Unit'] || '',
+    subscription_years: rawYears != null ? (typeof rawYears === 'number' ? rawYears : parseInt(rawYears) || null) : null,
+    commitment_end_date: toDateStr(s['Commitment End Date']),
+    invoice_date: toDateStr(s['Invoice Date']),
+    payment_periods: Array.isArray(s['Payment Periods'])
+      ? s['Payment Periods'].map((p: any) => ({
+          period_start: toDateStr(p['Period Start']) || '',
+          period_end: toDateStr(p['Period End']) || '',
+          amount: parseAmount(p['Amount (€)']),
+          original_amount: p['Original Amount (€)'] != null ? parseAmount(p['Original Amount (€)']) : null,
+        }))
+      : null,
   }
 }
 
@@ -159,35 +296,21 @@ export const mongoRepository = {
 
     const name: string = doc['Account Name'] || ''
 
-    const [rawSubs, rawContacts, rawProducts] = await Promise.all([
+    const [rawSubs, rawContacts, rawProducts, rawSchedules] = await Promise.all([
       db.collection('Subscriptions').find({ 'Account Name': name }).toArray(),
       db.collection('Contacts').find({ 'Account Name': name }).toArray(),
       db.collection('Product Catalog').find({}).toArray(),
+      db.collection('PaymentSchedules').find({ 'Account Name': name }).toArray(),
     ])
 
     const productMap = new Map(rawProducts.map(p => [p['Product Name'] as string, p]))
 
-    const subscriptions: SubscriptionDetail[] = rawSubs.map(s => {
-      const prod = productMap.get(s['Product Name'] as string)
-      return {
-        id: s._id.toHexString(),
-        account_id: id,
-        product_id: prod ? prod._id.toHexString() : '',
-        quantity: typeof s['Quantity'] === 'number' ? s['Quantity'] : parseInt(s['Quantity']) || 0,
-        unit_label: s['Unit'] || '',
-        unit_price: parseAmount(s['Unit Price (€)']),
-        total_price: parseAmount(s['Total (€)']),
-        is_active: 1,
-        product_name: s['Product Name'] || '',
-        category: s['Category'] || '',
-        product_group: s['Product Group'] || '',
-        product_unit_type: s['Unit'] || '',
-      }
-    })
+    const subscriptions: SubscriptionDetail[] = rawSubs.map(s => docToSubscription(s, id, productMap))
 
     const contacts: Contact[] = rawContacts.map(c => ({
       id: c._id.toHexString(),
       account_id: id,
+      account_name: name,
       name: c['Contact Name'] || '',
       role: c['Role / Title'] || '',
       initials: initials(c['Contact Name'] || ''),
@@ -196,7 +319,16 @@ export const mongoRepository = {
       phone: c['Phone'] || null,
     }))
 
-    return { ...docToAccount(doc, rawSubs), contacts, tickets: [], activities: [], subscriptions, notes: doc['Notes'] || '' }
+    const payment_schedules: PaymentSchedule[] = rawSchedules.map(d => ({
+      id: d._id.toHexString(),
+      account_id: id,
+      period_start: toDateStr(d['Period Start']) || '',
+      period_end: toDateStr(d['Period End']) || '',
+      amount: parseAmount(d['Amount (€)']),
+      invoice_date: toDateStr(d['Invoice Date']),
+    }))
+
+    return { ...docToAccount(doc, rawSubs), contacts, tickets: [], activities: [], subscriptions, notes: doc['Notes'] || '', payment_schedules }
   },
 
   async getProducts(): Promise<Product[]> {
@@ -326,21 +458,7 @@ export const mongoRepository = {
     search?: string, page = 1, limit = 20
   ): Promise<{ subscriptions: SubscriptionDetail[]; total: number }> {
     const { subs: rawSubs } = await getRawCollections()
-    let results: SubscriptionDetail[] = rawSubs.map(s => ({
-      id: s._id.toHexString(),
-      account_id: '',
-      account_name: s['Account Name'] || '',
-      product_id: '',
-      product_name: s['Product Name'] || '',
-      category: s['Category'] || '',
-      product_group: s['Product Group'] || '',
-      product_unit_type: s['Unit'] || '',
-      quantity: typeof s['Quantity'] === 'number' ? s['Quantity'] : parseInt(s['Quantity']) || 0,
-      unit_label: s['Unit'] || '',
-      unit_price: parseAmount(s['Unit Price (€)']),
-      total_price: parseAmount(s['Total (€)']),
-      is_active: 1,
-    }))
+    let results: SubscriptionDetail[] = rawSubs.map(s => docToSubscription(s))
 
     if (search) {
       const s = search.toLowerCase()
@@ -359,19 +477,34 @@ export const mongoRepository = {
   async createSubscription(data: {
     accountName: string; productName: string; category?: string
     productGroup?: string; quantity: number; unit?: string
-    unitPrice: number; notes?: string
+    listPrice?: number | null; unitPrice: number; notes?: string
+    subscriptionYears?: number | null; commitmentEndDate?: string
+    invoiceDate?: string | null
+    paymentPeriods?: Array<{ periodStart: string; periodEnd: string; amount: number; originalAmount?: number | null }> | null
   }): Promise<string> {
     const total = data.quantity * data.unitPrice
-    const doc = {
+    const doc: Record<string, unknown> = {
       'Account Name': data.accountName,
       'Product Name': data.productName,
       'Category': data.category || '',
       'Product Group': data.productGroup || '',
       'Quantity': data.quantity,
       'Unit': data.unit || '',
+      'List Price (€)': data.listPrice != null ? String(data.listPrice) : null,
       'Unit Price (€)': String(data.unitPrice),
       'Total (€)': String(total),
+      'Subscription Years': data.subscriptionYears ?? null,
+      'Commitment End Date': data.commitmentEndDate ? new Date(data.commitmentEndDate) : null,
+      'Invoice Date': data.invoiceDate ? new Date(data.invoiceDate) : null,
       'Notes': data.notes || '',
+      'Payment Periods': data.paymentPeriods
+        ? data.paymentPeriods.map(p => ({
+            'Period Start': new Date(p.periodStart),
+            'Period End': new Date(p.periodEnd),
+            'Amount (€)': String(p.amount),
+            'Original Amount (€)': p.originalAmount != null ? String(p.originalAmount) : null,
+          }))
+        : null,
     }
     const result = await getMongo().collection('Subscriptions').insertOne(doc)
     invalidateCache()
@@ -384,7 +517,10 @@ export const mongoRepository = {
 
   async updateSubscription(id: string, data: {
     productName?: string; category?: string; productGroup?: string
-    quantity?: number; unit?: string; unitPrice?: number; notes?: string
+    quantity?: number; unit?: string; listPrice?: number | null; unitPrice?: number; notes?: string
+    subscriptionYears?: number | null; commitmentEndDate?: string | null
+    invoiceDate?: string | null
+    paymentPeriods?: Array<{ periodStart: string; periodEnd: string; amount: number; originalAmount?: number | null }> | null
   }): Promise<boolean> {
     const db = getMongo()
     const existing = await db.collection('Subscriptions').findOne({ _id: new ObjectId(id) })
@@ -396,8 +532,22 @@ export const mongoRepository = {
     if (data.productGroup !== undefined) update['Product Group'] = data.productGroup
     if (data.quantity !== undefined) update['Quantity'] = data.quantity
     if (data.unit !== undefined) update['Unit'] = data.unit
+    if (data.listPrice !== undefined) update['List Price (€)'] = data.listPrice != null ? String(data.listPrice) : null
     if (data.unitPrice !== undefined) update['Unit Price (€)'] = String(data.unitPrice)
     if (data.notes !== undefined) update['Notes'] = data.notes
+    if (data.subscriptionYears !== undefined) update['Subscription Years'] = data.subscriptionYears ?? null
+    if (data.commitmentEndDate !== undefined) update['Commitment End Date'] = data.commitmentEndDate ? new Date(data.commitmentEndDate) : null
+    if (data.invoiceDate !== undefined) update['Invoice Date'] = data.invoiceDate ? new Date(data.invoiceDate) : null
+    if (data.paymentPeriods !== undefined) {
+      update['Payment Periods'] = data.paymentPeriods
+        ? data.paymentPeriods.map(p => ({
+            'Period Start': new Date(p.periodStart),
+            'Period End': new Date(p.periodEnd),
+            'Amount (€)': String(p.amount),
+            'Original Amount (€)': p.originalAmount != null ? String(p.originalAmount) : null,
+          }))
+        : null
+    }
 
     const finalQty = data.quantity ?? (typeof existing['Quantity'] === 'number' ? existing['Quantity'] : parseInt(existing['Quantity']) || 0)
     const finalPrice = data.unitPrice ?? parseAmount(existing['Unit Price (€)'])
@@ -419,9 +569,10 @@ export const mongoRepository = {
 
   async updateContact(id: string, data: {
     name?: string; role?: string; contactType?: string
-    email?: string; phone?: string; notes?: string
+    email?: string; phone?: string; notes?: string; accountName?: string
   }): Promise<boolean> {
     const update: Record<string, unknown> = {}
+    if (data.accountName !== undefined) update['Account Name'] = data.accountName
     if (data.name !== undefined) update['Contact Name'] = data.name
     if (data.role !== undefined) update['Role / Title'] = data.role
     if (data.contactType !== undefined) update['Contact Type'] = data.contactType
@@ -446,6 +597,9 @@ export const mongoRepository = {
     sector?: string; tier?: string; edition?: string; licenseModel?: string
     csm?: string; contractStart?: string; renewalDate?: string; arr?: number
     nps?: number | null; slaCompliance?: number | null; avgResolution?: string; notes?: string
+    address?: string; partnerName?: string; partnerMargin?: number | null
+    partnerLicensePrice?: number | null; currency?: string
+    invoiceDate?: string; paymentTerms?: string; consultingDays?: string; trainingInfo?: string
   }): Promise<boolean> {
     const update: Record<string, unknown> = {}
     if (data.sector !== undefined) update['Sector / Industry'] = data.sector
@@ -460,12 +614,55 @@ export const mongoRepository = {
     if (data.slaCompliance !== undefined) update['SLA Compliance %'] = data.slaCompliance
     if (data.avgResolution !== undefined) update['Avg Resolution'] = data.avgResolution
     if (data.notes !== undefined) update['Notes'] = data.notes
+    if (data.address !== undefined) update['Address'] = data.address || null
+    if (data.partnerName !== undefined) update['Partner Name'] = data.partnerName || null
+    if (data.partnerMargin !== undefined) update['Partner Margin %'] = data.partnerMargin ?? null
+    if (data.partnerLicensePrice !== undefined) update['Partner License Price (€)'] = data.partnerLicensePrice != null ? String(data.partnerLicensePrice) : null
+    if (data.currency !== undefined) update['Currency'] = data.currency || null
+    if (data.invoiceDate !== undefined) update['Invoice Date'] = data.invoiceDate ? new Date(data.invoiceDate) : null
+    if (data.paymentTerms !== undefined) update['Payment Terms'] = data.paymentTerms || null
+    if (data.consultingDays !== undefined) update['Consulting Days'] = data.consultingDays || null
+    if (data.trainingInfo !== undefined) update['Training Info'] = data.trainingInfo || null
     const result = await getMongo().collection('Accounts').updateOne(
       { _id: new ObjectId(id) },
       { $set: update }
     )
     invalidateCache()
     return result.matchedCount === 1
+  },
+
+  async createPaymentSchedule(data: {
+    accountName: string; periodStart: string; periodEnd: string
+    amount: number; invoiceDate?: string | null
+  }): Promise<string> {
+    const doc = {
+      'Account Name': data.accountName,
+      'Period Start': new Date(data.periodStart),
+      'Period End': new Date(data.periodEnd),
+      'Amount (€)': String(data.amount),
+      'Invoice Date': data.invoiceDate ? new Date(data.invoiceDate) : null,
+    }
+    const result = await getMongo().collection('PaymentSchedules').insertOne(doc)
+    return result.insertedId.toHexString()
+  },
+
+  async updatePaymentSchedule(id: string, data: {
+    periodStart?: string; periodEnd?: string; amount?: number; invoiceDate?: string | null
+  }): Promise<boolean> {
+    const update: Record<string, unknown> = {}
+    if (data.periodStart !== undefined) update['Period Start'] = new Date(data.periodStart)
+    if (data.periodEnd !== undefined) update['Period End'] = new Date(data.periodEnd)
+    if (data.amount !== undefined) update['Amount (€)'] = String(data.amount)
+    if (data.invoiceDate !== undefined) update['Invoice Date'] = data.invoiceDate ? new Date(data.invoiceDate) : null
+    const result = await getMongo().collection('PaymentSchedules').updateOne(
+      { _id: new ObjectId(id) }, { $set: update }
+    )
+    return result.matchedCount === 1
+  },
+
+  async deletePaymentSchedule(id: string): Promise<boolean> {
+    const result = await getMongo().collection('PaymentSchedules').deleteOne({ _id: new ObjectId(id) })
+    return result.deletedCount === 1
   },
 
   async deleteAccount(id: string): Promise<boolean> {
@@ -486,10 +683,47 @@ export const mongoRepository = {
     return result.deletedCount === 1
   },
 
+  async getDeals(accountName: string): Promise<Deal[]> {
+    const docs = await getMongo().collection('Deals')
+      .find({ 'Account Name': accountName })
+      .sort({ 'Created At': -1 })
+      .toArray()
+    return docs.map(docToDeal)
+  },
+
+  async getDeal(id: string): Promise<Deal | null> {
+    try {
+      const doc = await getMongo().collection('Deals').findOne({ _id: new ObjectId(id) })
+      return doc ? docToDeal(doc) : null
+    } catch { return null }
+  },
+
+  async createDeal(data: Parameters<typeof buildDealDoc>[0]): Promise<string> {
+    const doc = { ...buildDealDoc(data), 'Created At': new Date() }
+    const result = await getMongo().collection('Deals').insertOne(doc)
+    return result.insertedId.toHexString()
+  },
+
+  async updateDeal(id: string, data: Parameters<typeof buildDealDoc>[0]): Promise<boolean> {
+    const result = await getMongo().collection('Deals').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: buildDealDoc(data) }
+    )
+    return result.matchedCount === 1
+  },
+
+  async deleteDeal(id: string): Promise<boolean> {
+    const result = await getMongo().collection('Deals').deleteOne({ _id: new ObjectId(id) })
+    return result.deletedCount === 1
+  },
+
   async createAccount(data: {
     name: string; sector?: string; tier?: string; edition?: string
     licenseModel?: string; csm?: string; contractStart?: string; renewalDate?: string
     arr?: number; nps?: number | null; slaCompliance?: number | null; avgResolution?: string; notes?: string
+    address?: string; partnerName?: string; partnerMargin?: number | null
+    partnerLicensePrice?: number | null; currency?: string
+    invoiceDate?: string; paymentTerms?: string; consultingDays?: string; trainingInfo?: string
   }): Promise<string> {
     const doc: Record<string, unknown> = {
       'Account Name': data.name,
@@ -505,6 +739,15 @@ export const mongoRepository = {
       'SLA Compliance %': data.slaCompliance ?? null,
       'Avg Resolution': data.avgResolution || null,
       'Notes': data.notes || '',
+      'Address': data.address || null,
+      'Partner Name': data.partnerName || null,
+      'Partner Margin %': data.partnerMargin ?? null,
+      'Partner License Price (€)': data.partnerLicensePrice != null ? String(data.partnerLicensePrice) : null,
+      'Currency': data.currency || null,
+      'Invoice Date': data.invoiceDate ? new Date(data.invoiceDate) : null,
+      'Payment Terms': data.paymentTerms || null,
+      'Consulting Days': data.consultingDays || null,
+      'Training Info': data.trainingInfo || null,
     }
     const result = await getMongo().collection('Accounts').insertOne(doc)
     invalidateCache()

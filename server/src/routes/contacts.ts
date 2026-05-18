@@ -16,9 +16,9 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { accountName, name } = req.body
-    if (!accountName || !name)
-      return res.status(400).json({ error: 'accountName and name are required' })
+    const { name } = req.body
+    if (!name)
+      return res.status(400).json({ error: 'name is required' })
     const id = await repo.createContact(req.body)
     res.status(201).json({ id })
   } catch (e) {

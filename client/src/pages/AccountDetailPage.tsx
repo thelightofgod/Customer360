@@ -10,6 +10,7 @@ import TicketsTab from '@/components/detail/TicketsTab'
 import ContactsTab from '@/components/detail/ContactsTab'
 import ActivitiesTab from '@/components/detail/ActivitiesTab'
 import NotesTab from '@/components/detail/NotesTab'
+import DealsTab from '@/components/detail/DealsTab'
 import AddContactModal from '@/components/AddContactModal'
 import AddSubscriptionModal from '@/components/AddSubscriptionModal'
 import { api } from '@/lib/api'
@@ -204,17 +205,19 @@ export default function AccountDetailPage() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="deals">Deals</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview"><OverviewTab account={account} /></TabsContent>
+        <TabsContent value="overview"><OverviewTab account={account} onRefresh={refreshAccount} /></TabsContent>
         <TabsContent value="subscriptions">
           <SubscriptionsTab
             account={account}
             onAdd={() => setShowAddSub(true)}
             onEdit={setEditingSub}
             onDelete={handleDeleteSub}
+            onRefresh={refreshAccount}
           />
         </TabsContent>
         <TabsContent value="tickets"><TicketsTab account={account} /></TabsContent>
@@ -226,6 +229,7 @@ export default function AccountDetailPage() {
             onDelete={handleDeleteContact}
           />
         </TabsContent>
+        <TabsContent value="deals"><DealsTab account={account} /></TabsContent>
         <TabsContent value="activities"><ActivitiesTab account={account} /></TabsContent>
         <TabsContent value="notes"><NotesTab account={account} /></TabsContent>
       </Tabs>

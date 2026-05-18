@@ -3,8 +3,9 @@ import { fmtCurrency, fmtDate, daysUntil, pctElapsed, licenseModelVariant } from
 import { Badge } from '@/components/ui/badge'
 import { DollarSign, Users, CalendarClock, Ticket } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import PaymentScheduleSection from './PaymentScheduleSection'
 
-interface Props { account: AccountDetail }
+interface Props { account: AccountDetail; onRefresh: () => void }
 
 function KpiCard({ label, value, sub, hex, icon: Icon }: {
   label: string; value: string; sub?: string; hex: string; icon: LucideIcon
@@ -55,7 +56,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function OverviewTab({ account }: Props) {
+export default function OverviewTab({ account, onRefresh }: Props) {
   const days = daysUntil(account.renewal_date)
   const pct = pctElapsed(account.contract_start, account.renewal_date)
 
@@ -118,11 +119,44 @@ export default function OverviewTab({ account }: Props) {
             Account Info
           </div>
           <InfoRow label="Sector" value={account.sector || '—'} />
+          {account.address && <InfoRow label="Address" value={account.address} />}
           <InfoRow label="NPS" value={account.nps !== null ? String(account.nps) : '—'} />
           <InfoRow label="SLA Compliance" value={account.sla_compliance !== null ? `${account.sla_compliance}%` : '—'} />
           <InfoRow label="Avg Resolution" value={account.avg_resolution || '—'} />
           <InfoRow label="CSM" value={account.csm || '—'} />
         </div>
+
+        {(account.partner_name || account.partner_margin != null || account.partner_license_price) && (
+          <div
+            className="rounded-[16px] p-5"
+            style={{ background: 'rgba(35, 45, 78, 0.70)', border: '1px solid var(--brd)', backdropFilter: 'blur(8px)' }}
+          >
+            <div className="text-xs font-bold uppercase tracking-[0.8px] text-[var(--t4)] mb-4 flex items-center gap-2">
+              <div className="w-1.5 h-3.5 rounded-full" style={{ background: 'linear-gradient(180deg, #f7aa28, #e89620)' }} />
+              Partner
+            </div>
+            {account.partner_name && <InfoRow label="Partner" value={account.partner_name} />}
+            {account.partner_margin != null && <InfoRow label="Marj" value={`${account.partner_margin}%`} />}
+            {account.partner_license_price != null && <InfoRow label="Partner Lisans Bedeli" value={fmtCurrency(account.partner_license_price)} />}
+            {account.currency && <InfoRow label="Kur / Para Birimi" value={account.currency} />}
+          </div>
+        )}
+
+        {(account.invoice_date || account.payment_terms || account.consulting_days || account.training_info) && (
+          <div
+            className="rounded-[16px] p-5"
+            style={{ background: 'rgba(35, 45, 78, 0.70)', border: '1px solid var(--brd)', backdropFilter: 'blur(8px)' }}
+          >
+            <div className="text-xs font-bold uppercase tracking-[0.8px] text-[var(--t4)] mb-4 flex items-center gap-2">
+              <div className="w-1.5 h-3.5 rounded-full" style={{ background: 'linear-gradient(180deg, #1ad0e8, #14a8bc)' }} />
+              Fatura & Ek Bilgiler
+            </div>
+            {account.invoice_date && <InfoRow label="Fatura Tarihi" value={fmtDate(account.invoice_date) || '—'} />}
+            {account.payment_terms && <InfoRow label="Ödeme Vadesi" value={account.payment_terms} />}
+            {account.consulting_days && <InfoRow label="Danışmanlık" value={account.consulting_days} />}
+            {account.training_info && <InfoRow label="Eğitim" value={account.training_info} />}
+          </div>
+        )}
 
         <div
           className="rounded-[16px] p-5 col-span-2"
@@ -160,6 +194,12 @@ export default function OverviewTab({ account }: Props) {
           )}
         </div>
       </div>
+
+      <PaymentScheduleSection
+        schedules={account.payment_schedules}
+        accountName={account.name}
+        onRefresh={onRefresh}
+      />
     </div>
   )
 }

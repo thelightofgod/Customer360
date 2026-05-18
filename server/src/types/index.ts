@@ -17,6 +17,15 @@ export interface Account {
   contract_status: string | null
   total_licenses: number
   total_contract_value: number
+  address?: string | null
+  partner_name?: string | null
+  partner_margin?: number | null
+  partner_license_price?: number | null
+  currency?: string | null
+  invoice_date?: string | null
+  payment_terms?: string | null
+  consulting_days?: string | null
+  training_info?: string | null
 }
 
 export interface SubscriptionDetail {
@@ -26,6 +35,7 @@ export interface SubscriptionDetail {
   product_id: string
   quantity: number
   unit_label: string
+  list_price?: number | null
   unit_price: number
   total_price: number
   is_active: number
@@ -33,6 +43,64 @@ export interface SubscriptionDetail {
   category: string
   product_group: string
   product_unit_type: string
+  subscription_years?: number | null
+  commitment_end_date?: string | null
+  invoice_date?: string | null
+  payment_periods?: Array<{ period_start: string; period_end: string; amount: number }> | null
+}
+
+export interface PaymentSchedule {
+  id: string
+  account_id: string
+  period_start: string
+  period_end: string
+  amount: number
+  invoice_date: string | null
+}
+
+export interface DealLine {
+  product_name: string
+  category: string
+  product_group: string
+  quantity: number
+  unit: string
+  list_price: number
+  unit_price: number
+  total_price: number
+}
+
+export interface DealPaymentEntry {
+  period_start: string
+  period_end: string
+  amount: number
+  invoice_date: string | null
+}
+
+export interface Deal {
+  id: string
+  account_name: string
+  deal_type: string
+  deal_status: string
+  contract_start: string | null
+  contract_end: string | null
+  subscription_years: number | null
+  finance_contact: string | null
+  existing_commitment_end: string | null
+  remaining_months: number | null
+  remaining_period_price: number | null
+  partner_name: string | null
+  partner_margin: number | null
+  partner_license_price: number | null
+  currency: string | null
+  invoice_date: string | null
+  payment_terms: string | null
+  consulting_days: string | null
+  training_info: string | null
+  notes: string | null
+  total_value: number
+  lines: DealLine[]
+  payment_schedule: DealPaymentEntry[]
+  created_at: string
 }
 
 export interface Contact {
@@ -98,6 +166,7 @@ export interface AccountDetail extends Account {
   activities: Activity[]
   subscriptions: SubscriptionDetail[]
   notes?: string
+  payment_schedules: PaymentSchedule[]
 }
 
 export interface AccountSummaryStats {

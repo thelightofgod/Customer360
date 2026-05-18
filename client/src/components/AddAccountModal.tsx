@@ -36,6 +36,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: initialData?.name || '',
+    address: initialData?.address || '',
     sector: initialData?.sector || '',
     tier: initialData?.tier || 'Growth',
     edition: initialData?.edition || 'Qlik Cloud Business',
@@ -48,6 +49,10 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
     slaCompliance: initialData?.sla_compliance != null ? String(initialData.sla_compliance) : '',
     avgResolution: initialData?.avg_resolution || '',
     notes: initialData?.notes || '',
+    partnerName: initialData?.partner_name || '',
+    partnerMargin: initialData?.partner_margin != null ? String(initialData.partner_margin) : '',
+    partnerLicensePrice: initialData?.partner_license_price != null ? String(initialData.partner_license_price) : '',
+    currency: initialData?.currency || '',
   })
 
   function set(field: string, value: string) {
@@ -60,38 +65,30 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
     setSaving(true)
     setError('')
     try {
+      const commonFields = {
+        sector: form.sector,
+        tier: form.tier,
+        edition: form.edition,
+        licenseModel: form.licenseModel || null,
+        csm: form.csm,
+        contractStart: form.contractStart || undefined,
+        renewalDate: form.renewalDate || undefined,
+        arr: form.arr ? Number(form.arr) : 0,
+        nps: form.nps ? Number(form.nps) : null,
+        slaCompliance: form.slaCompliance ? Number(form.slaCompliance) : null,
+        avgResolution: form.avgResolution || undefined,
+        notes: form.notes || undefined,
+        address: form.address || undefined,
+        partnerName: form.partnerName || undefined,
+        partnerMargin: form.partnerMargin ? Number(form.partnerMargin) : null,
+        partnerLicensePrice: form.partnerLicensePrice ? Number(form.partnerLicensePrice) : null,
+        currency: form.currency || undefined,
+      }
       if (isEdit) {
-        await api.accounts.update(initialData!.id, {
-          sector: form.sector,
-          tier: form.tier,
-          edition: form.edition,
-          licenseModel: form.licenseModel || null,
-          csm: form.csm,
-          contractStart: form.contractStart || undefined,
-          renewalDate: form.renewalDate || undefined,
-          arr: form.arr ? Number(form.arr) : 0,
-          nps: form.nps ? Number(form.nps) : null,
-          slaCompliance: form.slaCompliance ? Number(form.slaCompliance) : null,
-          avgResolution: form.avgResolution || undefined,
-          notes: form.notes || undefined,
-        })
+        await api.accounts.update(initialData!.id, commonFields)
         toast.success('Changes saved')
       } else {
-        await api.accounts.create({
-          name: form.name.trim(),
-          sector: form.sector,
-          tier: form.tier,
-          edition: form.edition,
-          licenseModel: form.licenseModel || null,
-          csm: form.csm,
-          contractStart: form.contractStart || undefined,
-          renewalDate: form.renewalDate || undefined,
-          arr: form.arr ? Number(form.arr) : 0,
-          nps: form.nps ? Number(form.nps) : null,
-          slaCompliance: form.slaCompliance ? Number(form.slaCompliance) : null,
-          avgResolution: form.avgResolution || undefined,
-          notes: form.notes || undefined,
-        })
+        await api.accounts.create({ name: form.name.trim(), ...commonFields })
         toast.success('Account created')
       }
       onCreated()
@@ -107,7 +104,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative ml-auto h-full w-full max-w-full sm:max-w-[520px] bg-[var(--bg2)] border-l border-[var(--brd)] flex flex-col shadow-2xl">
+      <form onSubmit={handleSubmit} className="relative ml-auto h-full w-full max-w-full sm:max-w-[520px] bg-[var(--bg2)] border-l border-[var(--brd)] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--brd)]">
           <div>
             <h2 className="text-base font-bold text-[var(--t1)]">{isEdit ? 'Edit Account' : 'New Account'}</h2>
@@ -120,7 +117,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.8px] text-[var(--t4)] mb-3 flex items-center gap-2">
@@ -165,6 +162,15 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
                   {CSMS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </Field>
+              <Field label="Address">
+                <textarea
+                  value={form.address}
+                  onChange={e => set('address', e.target.value)}
+                  placeholder="Firma adresi..."
+                  rows={2}
+                  className="w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-2 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none focus:border-[var(--blue)] transition-colors resize-none"
+                />
+              </Field>
             </div>
           </div>
 
@@ -184,6 +190,28 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
               <Field label="ARR (€)">
                 <Input type="number" min="0" value={form.arr} onChange={e => set('arr', e.target.value)} placeholder="e.g. 120000" />
               </Field>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.8px] text-[var(--t4)] mb-3 flex items-center gap-2">
+              <div className="w-1 h-3 rounded-full" style={{ background: '#f7aa28' }} /> Partner
+            </div>
+            <div className="space-y-3">
+              <Field label="Partner Adı">
+                <Input value={form.partnerName} onChange={e => set('partnerName', e.target.value)} placeholder="e.g. Insight Analytics" />
+              </Field>
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Marj %">
+                  <Input type="number" min="0" max="100" value={form.partnerMargin} onChange={e => set('partnerMargin', e.target.value)} placeholder="20" />
+                </Field>
+                <Field label="Partner Lisans Bedeli (€)">
+                  <Input type="number" min="0" value={form.partnerLicensePrice} onChange={e => set('partnerLicensePrice', e.target.value)} placeholder="0" />
+                </Field>
+                <Field label="Kur / Para Birimi">
+                  <Input value={form.currency} onChange={e => set('currency', e.target.value)} placeholder="EUR" />
+                </Field>
+              </div>
             </div>
           </div>
 
@@ -217,7 +245,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
           </Field>
 
           {error && <p className="text-xs text-[var(--red)] bg-[var(--red)]/10 rounded-lg px-3 py-2">{error}</p>}
-        </form>
+        </div>
 
         <div className="px-6 py-4 border-t border-[var(--brd)] flex justify-end gap-2">
           <Button type="button" onClick={onClose} disabled={saving}>Cancel</Button>
@@ -225,7 +253,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
             {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Account'}
           </Button>
         </div>
-      </div>
+      </form>
     </div>
   )
 }

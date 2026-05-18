@@ -1,11 +1,18 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import ToastContainer from '@/components/ui/toast'
+import { useAuth } from '@/lib/authContext'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { email, onLogout } = useAuth()
+  const [showChangePw, setShowChangePw] = useState(false)
   const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  const initials = email ? email.split('.').map(p => p[0]?.toUpperCase()).join('').slice(0, 2) : 'U'
+  const displayName = email ? email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') : ''
 
   const navLinks = [
     { path: '/', label: 'Accounts' },
@@ -41,12 +48,9 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <path d="M3 8h3l1.5-4 2.5 8 1.5-4H14" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="hidden sm:inline text-sm font-bold tracking-tight text-[var(--t1)]">BI Technology</span>
+            <span className="text-sm font-bold tracking-tight text-[var(--t1)]">Customer 360</span>
           </button>
 
-          <div className="hidden sm:block w-px h-5 bg-[var(--brd)]" />
-          <span className="hidden sm:inline text-[13px] font-semibold text-[var(--t3)]">Customer 360</span>
-          <span className="inline sm:hidden text-[13px] font-semibold text-[var(--t3)]">C360</span>
           <div className="hidden md:block w-px h-5 bg-[var(--brd)]" />
 
           <nav className="flex items-center gap-0.5">
@@ -83,25 +87,46 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
-          <span className="hidden md:inline text-[11px] text-[var(--t4)] font-mono tabular-nums">{dateStr}</span>
-          <div
-            className="flex items-center gap-1.5 py-1 pl-2 md:pl-3 pr-1 rounded-full text-xs font-medium text-[var(--t2)] cursor-pointer transition-all hover:border-[var(--brd2)]"
-            style={{
-              background: 'rgba(17, 31, 50, 0.70)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <span className="hidden md:inline">Omer</span>
+          <span className="hidden lg:inline text-[11px] text-[var(--t2)] italic">Powered by BI Technology</span>
+          <div className="hidden lg:block w-px h-4 bg-[var(--brd2)]" />
+          <span className="hidden md:inline text-[11px] text-[var(--t2)] font-mono tabular-nums">{dateStr}</span>
+          <div className="flex items-center gap-2">
             <div
-              className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+              className="flex items-center gap-1.5 py-1 pl-2 md:pl-3 pr-1 rounded-full text-xs font-medium text-[var(--t2)]"
               style={{
-                background: 'linear-gradient(135deg, var(--green), var(--cyan))',
-                boxShadow: '0 2px 8px rgba(46, 216, 150, 0.35)',
+                background: 'rgba(17, 31, 50, 0.70)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                backdropFilter: 'blur(8px)',
               }}
             >
-              OC
+              <span className="hidden md:inline">{displayName}</span>
+              <div
+                className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                style={{
+                  background: 'linear-gradient(135deg, var(--green), var(--cyan))',
+                  boxShadow: '0 2px 8px rgba(46, 216, 150, 0.35)',
+                }}
+              >
+                {initials}
+              </div>
             </div>
+            <button
+              onClick={() => setShowChangePw(true)}
+              title="Şifre değiştir"
+              className="text-[11px] text-[var(--t4)] hover:text-[var(--blue)] transition-colors px-1"
+            >
+              <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5">
+                <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+                <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+            </button>
+            <button
+              onClick={onLogout}
+              title="Çıkış yap"
+              className="text-[11px] text-[var(--t4)] hover:text-[var(--red)] transition-colors px-1"
+            >
+              ⏻
+            </button>
           </div>
         </div>
       </nav>
@@ -110,6 +135,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {children}
       </main>
       <ToastContainer />
+      {showChangePw && <ChangePasswordModal onClose={() => setShowChangePw(false)} />}
     </div>
   )
 }
