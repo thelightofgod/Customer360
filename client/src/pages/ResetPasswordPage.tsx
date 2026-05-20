@@ -16,8 +16,8 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (password !== confirm) { setError('Şifreler eşleşmiyor'); return }
-    if (password.length < 6) { setError('Şifre en az 6 karakter olmalı'); return }
+    if (password !== confirm) { setError('Passwords do not match'); return }
+    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/auth/reset-password', {
@@ -26,10 +26,10 @@ export default function ResetPasswordPage() {
         body: JSON.stringify({ token, password }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Bir hata oluştu'); return }
+      if (!res.ok) { setError(data.error || 'An error occurred'); return }
       setDone(true)
     } catch {
-      setError('Bağlantı hatası')
+      setError('Connection error')
     } finally {
       setLoading(false)
     }
@@ -39,9 +39,9 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="text-center">
-          <p className="text-sm text-[var(--red)]">Geçersiz link</p>
+          <p className="text-sm text-[var(--red)]">Invalid link</p>
           <button onClick={() => navigate('/login')} className="text-xs text-[var(--blue)] hover:underline mt-2 block mx-auto">
-            Giriş sayfasına dön
+            Back to login
           </button>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
             </svg>
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-[var(--t1)]">Yeni Şifre Belirle</h1>
+            <h1 className="text-xl font-bold text-[var(--t1)]">Set New Password</h1>
             <p className="text-xs text-[var(--t4)] mt-0.5">Customer 360 · BI Technology</p>
           </div>
         </div>
@@ -93,33 +93,33 @@ export default function ResetPasswordPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[var(--t1)]">Şifre güncellendi</p>
-                <p className="text-xs text-[var(--t3)] mt-1">Yeni şifrenizle giriş yapabilirsiniz.</p>
+                <p className="text-sm font-semibold text-[var(--t1)]">Password updated</p>
+                <p className="text-xs text-[var(--t3)] mt-1">You can now log in with your new password.</p>
               </div>
               <Button variant="primary" className="w-full justify-center" onClick={() => navigate('/login')}>
-                Giriş Yap
+                Sign In
               </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Yeni Şifre</label>
+                <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">New Password</label>
                 <Input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="En az 6 karakter"
+                  placeholder="At least 6 characters"
                   autoFocus
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Şifre Tekrar</label>
+                <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Confirm Password</label>
                 <Input
                   type="password"
                   value={confirm}
                   onChange={e => setConfirm(e.target.value)}
-                  placeholder="Şifreyi tekrar girin"
+                  placeholder="Re-enter password"
                   required
                 />
               </div>
@@ -129,7 +129,7 @@ export default function ResetPasswordPage() {
               )}
 
               <Button variant="primary" type="submit" disabled={loading} className="w-full justify-center">
-                {loading ? 'Kaydediliyor…' : 'Şifreyi Güncelle'}
+                {loading ? 'Saving…' : 'Update Password'}
               </Button>
             </form>
           )}

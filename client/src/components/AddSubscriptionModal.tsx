@@ -54,12 +54,21 @@ function autoGeneratePeriods(
   })
 }
 
+const CATEGORIES = ['Analytics', 'Data'] as const
+type ProductCategory = typeof CATEGORIES[number]
+
+function getProductCategory(name: string): ProductCategory {
+  if (name.includes('Data Integration') || name.includes('Talend')) return 'Data'
+  return 'Analytics'
+}
+
 export default function AddSubscriptionModal({ onClose, onCreated, prefilledAccount, initialData }: Props) {
   const isEdit = !!initialData
   const [accounts, setAccounts] = useState<Account[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [productCategory, setProductCategory] = useState<ProductCategory | ''>('')
   const [form, setForm] = useState({
     accountName: initialData?.account_name || prefilledAccount?.name || '',
     productId: '',
@@ -85,6 +94,10 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
       api.accounts.list({ limit: 999 }).then(d => setAccounts(d.accounts)).catch(console.error)
     }
   }, [])
+
+  const filteredProducts = productCategory
+    ? products.filter(p => getProductCategory(p.name) === productCategory)
+    : products
 
   const selectedProduct = products.find(p => p.id === form.productId)
   const catalogPrice = selectedProduct?.list_price ?? initialData?.list_price ?? null
@@ -122,6 +135,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.accountName) { setError('Account is required'); return }
+    if (!isEdit && !productCategory) { setError('Category is required'); return }
     if (!form.productId && !isEdit) { setError('Product is required'); return }
     if (!form.quantity) { setError('Quantity is required'); return }
     setSaving(true); setError('')
@@ -199,15 +213,36 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
             )}
           </Field>
 
+          {!isEdit && (
+            <Field label="Category" required>
+              <select
+                className={selectClass}
+                value={productCategory}
+                onChange={e => {
+                  setProductCategory(e.target.value as ProductCategory | '')
+                  setForm(f => ({ ...f, productId: '', unitPriceOverride: '', hasDiscount: false, discountedUnitPrice: '' }))
+                }}
+              >
+                <option value="">— Select category —</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
+          )}
+
           <Field label="Product" required={!isEdit}>
             {isEdit ? (
               <div className="h-9 flex items-center px-3 rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)]/50 text-sm text-[var(--t2)]">
                 {initialData!.product_name}
               </div>
             ) : (
-              <select className={selectClass} value={form.productId} onChange={e => set('productId', e.target.value)}>
-                <option value="">— Select product —</option>
-                {products.map(p => (
+              <select
+                className={selectClass}
+                value={form.productId}
+                onChange={e => set('productId', e.target.value)}
+                disabled={!productCategory}
+              >
+                <option value="">— {productCategory ? 'Select product' : 'Select a category first'} —</option>
+                {filteredProducts.map(p => (
                   <option key={p.id} value={p.id}>{p.name} — {p.product_group}</option>
                 ))}
               </select>
@@ -223,7 +258,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
                   : `${initialData!.category} · ${initialData!.product_group}`}
               </span>
               {catalogPrice != null && !isEdit && (
-                <span className="font-mono text-[var(--t4)]">Katalog: {fmtCurrency(catalogPrice)} / birim</span>
+                <span className="font-mono text-[var(--t4)]">Catalog: {fmtCurrency(catalogPrice)} / unit</span>
               )}
             </div>
           )}
@@ -232,7 +267,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
           {!isEdit && (selectedProduct || form.unitPriceOverride) && (
             <div className="rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-3 space-y-3">
               <div className="grid grid-cols-2 gap-3 items-end">
-                <Field label="Birim Fiyat (€)">
+                <Field label="Unit Price (€)">
                   <Input
                     type="number" min="0"
                     value={form.unitPriceOverride}
@@ -241,7 +276,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
                   />
                 </Field>
                 {form.hasDiscount && (
-                  <Field label="İndirimli Birim Fiyat (€)">
+                  <Field label="Discounted Unit Price (€)">
                     <div className="relative">
                       <Input
                         type="number" min="0"
@@ -266,7 +301,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
                   onClick={() => setForm(f => ({ ...f, hasDiscount: false, discountedUnitPrice: '' }))}
                   className="text-[11px] text-[var(--t4)] hover:text-[var(--red)] transition-colors"
                 >
-                  İndirimi kaldır
+                  Remove discount
                 </button>
               ) : (
                 <button
@@ -274,7 +309,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
                   onClick={() => setForm(f => ({ ...f, hasDiscount: true }))}
                   className="text-[11px] text-[var(--blue)] hover:underline font-semibold"
                 >
-                  + İndirimli fiyat ekle
+                  + Add discounted price
                 </button>
               )}
             </div>
@@ -285,7 +320,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
             <div className="rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-2.5 flex items-center justify-end">
               <span className="text-sm font-mono font-semibold text-[var(--t2)] flex-shrink-0">
                 {fmtCurrency(catalogPrice)}
-                <span className="text-[10px] text-[var(--t4)] ml-1 font-normal">/ birim</span>
+                <span className="text-[10px] text-[var(--t4)] ml-1 font-normal">/ unit</span>
               </span>
             </div>
           )}
@@ -294,13 +329,13 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
             <Field label="Quantity" required>
               <Input type="number" min="1" value={form.quantity} onChange={e => set('quantity', e.target.value)} autoFocus={!isEdit && !!prefilledAccount} />
             </Field>
-            <Field label="Fatura Kesim Tarihi">
+            <Field label="Invoice Date">
               <Input type="date" value={form.invoiceDate} onChange={e => set('invoiceDate', e.target.value)} />
             </Field>
           </div>
 
           {!isEdit && (
-            <Field label="Abonelik Süresi (Yıl)">
+            <Field label="Subscription Term (Years)">
               <Input
                 type="number" min="1" max="10"
                 value={form.subscriptionYears}
@@ -313,7 +348,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
           {/* Yıllık Tutar */}
           {annualTotal != null && annualTotal > 0 && (
             <div className="flex justify-between items-center px-3 py-2.5 bg-[var(--green)]/10 border border-[var(--green)]/20 rounded-[10px]">
-              <span className="text-xs text-[var(--t3)]">Yıllık Tutar</span>
+              <span className="text-xs text-[var(--t3)]">Annual Total</span>
               <div className="flex items-center gap-2">
                 {form.hasDiscount && annualOriginal != null && annualOriginal > annualTotal && (
                   <span className="text-xs font-mono text-[var(--t4)] line-through">{fmtCurrency(annualOriginal)}</span>
@@ -334,9 +369,9 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
             <div className="rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] overflow-hidden">
               <div className="px-3 py-2 border-b border-[var(--brd)] flex items-center justify-between">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">
-                  Ödeme Takvimi Önizleme
+                  Payment Schedule Preview
                 </span>
-                <span className="text-[10px] text-[var(--t4)]">{previewYears} yıl</span>
+                <span className="text-[10px] text-[var(--t4)]">{previewYears} yr</span>
               </div>
               <div className="divide-y divide-[var(--brd)]">
                 {previewPeriods.map((p, i) => (

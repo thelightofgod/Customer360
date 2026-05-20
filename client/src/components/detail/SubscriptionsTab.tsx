@@ -156,10 +156,10 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
           originalAmount: p.original_amount ?? null,
         })),
       })
-      toast.success('Ödeme takvimi kaydedildi')
+      toast.success('Payment schedule saved')
       onRefresh?.()
     } catch {
-      toast.error('Kaydedilemedi')
+      toast.error('Failed to save')
     } finally {
       setSavingId(null)
     }
@@ -208,16 +208,16 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                       {s.subscription_years && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] font-mono" style={{ background: 'rgba(91,158,255,0.12)', color: 'var(--blue)' }}>
-                          {s.subscription_years} yıl
+                          {s.subscription_years} yr
                         </span>
                       )}
                       {isSaved && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-[4px]" style={{ background: 'rgba(46,216,150,0.10)', color: 'var(--green)' }}>
-                          takvim ✓
+                          schedule ✓
                         </span>
                       )}
                       {s.commitment_end_date && (
-                        <span className="text-[10px] text-[var(--t4)]">bitiş: {fmtDate(s.commitment_end_date)}</span>
+                        <span className="text-[10px] text-[var(--t4)]">end: {fmtDate(s.commitment_end_date)}</span>
                       )}
                     </div>
                   </div>
@@ -252,7 +252,7 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
                   <div className="border-t border-[var(--brd)] px-4 py-3" style={{ background: 'rgba(0,0,0,0.15)' }}>
                     {editingPeriods.length === 0 ? (
                       <div className="text-xs text-[var(--t4)] py-3 text-center">
-                        Henüz dönem eklenmemiş — aşağıdan ekleyebilirsiniz
+                        No periods added yet — add one below
                       </div>
                     ) : (
                       <div className="space-y-1">
@@ -300,16 +300,16 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center gap-3">
                         <button onClick={() => addPeriod(s.total_price)} className="text-[11px] text-[var(--blue)] hover:underline font-semibold flex items-center gap-1">
-                          <Plus className="w-3 h-3" /> Dönem Ekle
+                          <Plus className="w-3 h-3" /> Add Period
                         </button>
                         {canAutoGen && (
                           <button onClick={() => resetToAuto(s)} className="text-[11px] text-[var(--t4)] hover:text-[var(--t2)] flex items-center gap-1">
-                            <RotateCcw className="w-3 h-3" /> Otomatik Yenile
+                            <RotateCcw className="w-3 h-3" /> Auto Generate
                           </button>
                         )}
                       </div>
                       <Button variant="primary" size="sm" disabled={savingId === s.id} onClick={() => savePeriods(s.id)}>
-                        {savingId === s.id ? 'Kaydediliyor…' : 'Kaydet'}
+                        {savingId === s.id ? 'Saving…' : 'Save'}
                       </Button>
                     </div>
                   </div>
@@ -342,7 +342,7 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
           style={{ background: 'var(--bg2)' }}
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--brd)]">
-            <span className="text-sm font-bold text-[var(--t1)]">Dönem Düzenle</span>
+            <span className="text-sm font-bold text-[var(--t1)]">Edit Period</span>
             <button onClick={() => setPeriodModal(null)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--t1)] hover:bg-[var(--bg3)] transition-colors">
               <X className="w-3.5 h-3.5" />
             </button>
@@ -351,11 +351,11 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
           <div className="px-5 py-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Başlangıç</label>
+                <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Start</label>
                 <Input type="date" value={periodModal.draft.period_start} onChange={e => setDraftField('period_start', e.target.value)} className="h-9 text-xs" />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Bitiş</label>
+                <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">End</label>
                 <Input type="date" value={periodModal.draft.period_end} onChange={e => setDraftField('period_end', e.target.value)} className="h-9 text-xs" />
               </div>
             </div>
@@ -363,7 +363,7 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
             {periodModal.draft.original_amount !== undefined ? (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Normal Fiyat (€)</label>
+                  <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">List Price (€)</label>
                   <Input
                     type="number" min="0"
                     value={periodModal.draft.original_amount}
@@ -373,7 +373,7 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">İndirimli Fiyat (€)</label>
+                    <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Discounted Price (€)</label>
                     {draftDiscount !== null && (
                       <span className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-[4px]"
                         style={{ background: 'rgba(247,170,40,0.12)', color: '#f7aa28' }}>
@@ -394,13 +394,13 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
                   onClick={toggleDraftDiscount}
                   className="text-[11px] text-[var(--t4)] hover:text-[var(--red)] transition-colors"
                 >
-                  İndirimi kaldır
+                  Remove discount
                 </button>
               </>
             ) : (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Fatura Tutarı (€)</label>
+                  <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Invoice Amount (€)</label>
                   <Input
                     type="number" min="0"
                     value={periodModal.draft.amount}
@@ -414,15 +414,15 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
                   onClick={toggleDraftDiscount}
                   className="text-[11px] text-[var(--blue)] hover:underline font-semibold"
                 >
-                  + İndirimli fiyat ekle
+                  + Add discounted price
                 </button>
               </>
             )}
           </div>
 
           <div className="px-5 py-4 border-t border-[var(--brd)] flex justify-end gap-2">
-            <Button type="button" onClick={() => setPeriodModal(null)}>İptal</Button>
-            <Button variant="primary" type="button" onClick={savePeriodEdit}>Tamam</Button>
+            <Button type="button" onClick={() => setPeriodModal(null)}>Cancel</Button>
+            <Button variant="primary" type="button" onClick={savePeriodEdit}>OK</Button>
           </div>
         </div>
       </div>

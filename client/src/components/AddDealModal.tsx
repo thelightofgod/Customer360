@@ -17,8 +17,8 @@ interface Props {
   onSaved: () => void
 }
 
-const DEAL_TYPES = ['Yeni Satış', 'Yenileme', 'Ek Lisans']
-const DEAL_STATUSES = ['Teklif', 'Aktif', 'Tamamlandı']
+const DEAL_TYPES = ['New Sale', 'Renewal', 'Add-on License']
+const DEAL_STATUSES = ['Proposal', 'Active', 'Completed']
 
 function SectionHeader({ label, color }: { label: string; color: string }) {
   return (
@@ -72,8 +72,8 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
   const [saving, setSaving] = useState(false)
 
   const [form, setForm] = useState({
-    dealType: initialData?.deal_type || 'Yeni Satış',
-    dealStatus: initialData?.deal_status || 'Aktif',
+    dealType: initialData?.deal_type || 'New Sale',
+    dealStatus: initialData?.deal_status || 'Active',
     contractStart: initialData?.contract_start || '',
     contractEnd: initialData?.contract_end || '',
     subscriptionYears: initialData?.subscription_years != null ? String(initialData.subscription_years) : '',
@@ -215,14 +215,14 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
 
       if (isEdit) {
         await api.deals.update(initialData!.id, payload)
-        toast.success('Deal güncellendi')
+        toast.success('Deal updated')
       } else {
         await api.deals.create(payload)
-        toast.success('Deal oluşturuldu')
+        toast.success('Deal created')
       }
       onSaved()
     } catch {
-      toast.error('Kaydedilemedi')
+      toast.error('Failed to save')
     } finally {
       setSaving(false)
     }
@@ -237,7 +237,7 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--brd)]">
           <div className="flex items-center gap-3">
             <div>
-              <h2 className="text-base font-bold text-[var(--t1)]">{isEdit ? 'Deal Düzenle' : 'Yeni Deal'}</h2>
+              <h2 className="text-base font-bold text-[var(--t1)]">{isEdit ? 'Edit Deal' : 'New Deal'}</h2>
               <p className="text-xs text-[var(--t4)] mt-0.5">{accountName}</p>
             </div>
           </div>
@@ -261,43 +261,43 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
 
           {/* Contract Info */}
           <div>
-            <SectionHeader label="Sözleşme Bilgileri" color="var(--blue)" />
+            <SectionHeader label="Contract Details" color="var(--blue)" />
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Sözleşme Başlangıcı">
+                <Field label="Contract Start">
                   <Input type="date" value={form.contractStart} onChange={e => set('contractStart', e.target.value)} />
                 </Field>
-                <Field label="Taahhüt Bitiş Tarihi">
+                <Field label="Commitment End Date">
                   <Input type="date" value={form.contractEnd} onChange={e => set('contractEnd', e.target.value)} />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Abonelik Süresi (Yıl)">
+                <Field label="Subscription Term (Years)">
                   <Input type="number" min="1" max="10" value={form.subscriptionYears} onChange={e => set('subscriptionYears', e.target.value)} placeholder="3" />
                 </Field>
-                <Field label="Finans Kontak">
-                  <Input value={form.financeContact} onChange={e => set('financeContact', e.target.value)} placeholder="Ad / Görevi / E-mail" />
+                <Field label="Finance Contact">
+                  <Input value={form.financeContact} onChange={e => set('financeContact', e.target.value)} placeholder="Name / Title / Email" />
                 </Field>
               </div>
             </div>
           </div>
 
           {/* Ek Lisans section */}
-          {form.dealType === 'Ek Lisans' && (
+          {form.dealType === 'Add-on License' && (
             <div>
-              <SectionHeader label="Ek Lisans Detayları" color="#1ad0e8" />
+              <SectionHeader label="Add-on License Details" color="#1ad0e8" />
               <div className="space-y-3">
-                <Field label="Mevcut Taahhüt Bitiş Tarihi">
+                <Field label="Existing Commitment End Date">
                   <Input type="date" value={form.existingCommitmentEnd} onChange={e => set('existingCommitmentEnd', e.target.value)} />
                 </Field>
                 {remainingMonths != null && (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)]/50 px-3 py-2">
-                      <div className="text-[10px] text-[var(--t4)] uppercase tracking-[0.5px] mb-0.5">Kalan Ay</div>
-                      <div className="text-sm font-bold text-[var(--t1)]">{remainingMonths} ay</div>
+                      <div className="text-[10px] text-[var(--t4)] uppercase tracking-[0.5px] mb-0.5">Remaining Months</div>
+                      <div className="text-sm font-bold text-[var(--t1)]">{remainingMonths} months</div>
                     </div>
                     <div className="rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)]/50 px-3 py-2">
-                      <div className="text-[10px] text-[var(--t4)] uppercase tracking-[0.5px] mb-0.5">Kalan Dönem Net Tutar</div>
+                      <div className="text-[10px] text-[var(--t4)] uppercase tracking-[0.5px] mb-0.5">Remaining Period Net Amount</div>
                       <div className="text-sm font-bold" style={{ color: 'var(--green)' }}>
                         {remainingPeriodPrice != null ? fmtCurrency(remainingPeriodPrice) : '—'}
                       </div>
@@ -310,7 +310,7 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
 
           {/* Products */}
           <div>
-            <SectionHeader label="Ürünler / Lisanslar" color="var(--green)" />
+            <SectionHeader label="Products / Licenses" color="var(--green)" />
             <div
               className="rounded-[12px] overflow-hidden mb-2"
               style={{ border: '1px solid var(--brd)', background: 'rgba(0,0,0,0.15)' }}
@@ -318,11 +318,11 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
               {/* Table header */}
               <div className="grid grid-cols-[2fr_60px_90px_90px_90px_32px] gap-1 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.8px] text-[var(--t4)]"
                 style={{ borderBottom: '1px solid var(--brd)', background: 'rgba(0,0,0,0.1)' }}>
-                <span>Ürün</span>
-                <span className="text-center">Adet</span>
-                <span className="text-right">Liste €</span>
-                <span className="text-right">İndirimli €</span>
-                <span className="text-right">Toplam</span>
+                <span>Product</span>
+                <span className="text-center">Qty</span>
+                <span className="text-right">List €</span>
+                <span className="text-right">Discounted €</span>
+                <span className="text-right">Total</span>
                 <span />
               </div>
               {lines.map((line, idx) => {
@@ -332,7 +332,7 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
                     style={{ borderBottom: idx < lines.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
                     <select className="h-8 w-full rounded-[8px] border border-[var(--brd)] bg-[var(--bg3)] px-2 text-xs text-[var(--t1)] focus:outline-none appearance-none cursor-pointer"
                       value={line.productId} onChange={e => handleProductChange(idx, e.target.value)}>
-                      <option value="">— Ürün seç —</option>
+                      <option value="">— Select product —</option>
                       {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                     <Input type="number" min="1" value={line.quantity} onChange={e => updateLine(idx, 'quantity', e.target.value)}
@@ -354,18 +354,18 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
             </div>
             <div className="flex items-center justify-between">
               <Button type="button" size="sm" onClick={() => setLines(prev => [...prev, emptyLine()])}>
-                <Plus className="w-3 h-3" /> Ürün Ekle
+                <Plus className="w-3 h-3" /> Add Product
               </Button>
               {(totalList > 0 || totalDiscounted > 0) && (
                 <div className="flex gap-4 text-xs">
                   {totalList > 0 && (
                     <span className="text-[var(--t3)]">
-                      Liste: <span className="font-mono font-semibold text-[var(--t2)]">{fmtCurrency(totalList)}</span>
+                      List: <span className="font-mono font-semibold text-[var(--t2)]">{fmtCurrency(totalList)}</span>
                     </span>
                   )}
                   {totalDiscounted > 0 && (
                     <span className="text-[var(--t3)]">
-                      İndirimli: <span className="font-mono font-bold" style={{ color: 'var(--green)' }}>{fmtCurrency(totalDiscounted)}</span>
+                      Discounted: <span className="font-mono font-bold" style={{ color: 'var(--green)' }}>{fmtCurrency(totalDiscounted)}</span>
                     </span>
                   )}
                 </div>
@@ -375,19 +375,19 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
 
           {/* Partner */}
           <div>
-            <SectionHeader label="Partner Bilgileri" color="#f7aa28" />
+            <SectionHeader label="Partner Details" color="#f7aa28" />
             <div className="space-y-3">
-              <Field label="Partner Adı">
-                <Input value={form.partnerName} onChange={e => set('partnerName', e.target.value)} placeholder="Partner firma adı" />
+              <Field label="Partner Name">
+                <Input value={form.partnerName} onChange={e => set('partnerName', e.target.value)} placeholder="Partner company name" />
               </Field>
               <div className="grid grid-cols-3 gap-3">
-                <Field label="Marj %">
+                <Field label="Margin %">
                   <Input type="number" min="0" max="100" value={form.partnerMargin} onChange={e => set('partnerMargin', e.target.value)} placeholder="20" />
                 </Field>
-                <Field label="Partner Lisans Bedeli (€)">
+                <Field label="Partner License Price (€)">
                   <Input type="number" min="0" value={form.partnerLicensePrice} onChange={e => set('partnerLicensePrice', e.target.value)} placeholder="0" />
                 </Field>
-                <Field label="Kur / Para Birimi">
+                <Field label="Currency">
                   <Input value={form.currency} onChange={e => set('currency', e.target.value)} placeholder="EUR" />
                 </Field>
               </div>
@@ -396,22 +396,22 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
 
           {/* Fatura & Ek Bilgiler */}
           <div>
-            <SectionHeader label="Fatura & Ek Bilgiler" color="#a07cf0" />
+            <SectionHeader label="Invoice & Additional Info" color="#a07cf0" />
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Fatura Tarihi">
+                <Field label="Invoice Date">
                   <Input type="date" value={form.invoiceDate} onChange={e => set('invoiceDate', e.target.value)} />
                 </Field>
-                <Field label="Ödeme Vadesi">
-                  <Input value={form.paymentTerms} onChange={e => set('paymentTerms', e.target.value)} placeholder="30 Gün" />
+                <Field label="Payment Terms">
+                  <Input value={form.paymentTerms} onChange={e => set('paymentTerms', e.target.value)} placeholder="30 Days" />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Danışmanlık (Adam/Gün)">
-                  <Input value={form.consultingDays} onChange={e => set('consultingDays', e.target.value)} placeholder="5 gün" />
+                <Field label="Consulting (Man-Days)">
+                  <Input value={form.consultingDays} onChange={e => set('consultingDays', e.target.value)} placeholder="5 days" />
                 </Field>
-                <Field label="Eğitim">
-                  <Input value={form.trainingInfo} onChange={e => set('trainingInfo', e.target.value)} placeholder="2 kişi ücretsiz" />
+                <Field label="Training">
+                  <Input value={form.trainingInfo} onChange={e => set('trainingInfo', e.target.value)} placeholder="2 persons free" />
                 </Field>
               </div>
             </div>
@@ -419,21 +419,21 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
 
           {/* Payment Schedule */}
           <div>
-            <SectionHeader label="Lisans Kiralama Dönemi / Ödeme Takvimi" color="#2ed896" />
+            <SectionHeader label="License Rental Period / Payment Schedule" color="#2ed896" />
             <div
               className="rounded-[12px] overflow-hidden mb-2"
               style={{ border: '1px solid var(--brd)', background: 'rgba(0,0,0,0.15)' }}
             >
               <div className="grid grid-cols-[1fr_1fr_110px_110px_32px] gap-1 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.8px] text-[var(--t4)]"
                 style={{ borderBottom: '1px solid var(--brd)', background: 'rgba(0,0,0,0.1)' }}>
-                <span>Dönem Başlangıcı</span>
-                <span>Dönem Bitişi</span>
-                <span className="text-right">Fatura Tutarı (€)</span>
-                <span className="text-center">Fatura Tarihi</span>
+                <span>Period Start</span>
+                <span>Period End</span>
+                <span className="text-right">Invoice Amount (€)</span>
+                <span className="text-center">Invoice Date</span>
                 <span />
               </div>
               {scheduleRows.length === 0 && (
-                <div className="text-center py-5 text-xs text-[var(--t4)]">Henüz satır eklenmedi</div>
+                <div className="text-center py-5 text-xs text-[var(--t4)]">No rows added yet</div>
               )}
               {scheduleRows.map((row, idx) => (
                 <div key={idx} className="grid grid-cols-[1fr_1fr_110px_110px_32px] gap-1 items-center px-3 py-2"
@@ -450,16 +450,16 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
               ))}
             </div>
             <Button type="button" size="sm" onClick={() => setScheduleRows(prev => [...prev, emptyScheduleRow()])}>
-              <Plus className="w-3 h-3" /> Satır Ekle
+              <Plus className="w-3 h-3" /> Add Row
             </Button>
           </div>
 
           {/* Notes */}
-          <Field label="Not">
+          <Field label="Notes">
             <textarea
               value={form.notes}
               onChange={e => set('notes', e.target.value)}
-              placeholder="Ek notlar..."
+              placeholder="Additional notes..."
               rows={3}
               className="w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-2 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none focus:border-[var(--blue)] transition-colors resize-none"
             />
@@ -468,9 +468,9 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[var(--brd)] flex justify-end gap-2">
-          <Button type="button" onClick={onClose} disabled={saving}>İptal</Button>
+          <Button type="button" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button variant="primary" onClick={handleSubmit as any} disabled={saving}>
-            {saving ? 'Kaydediliyor…' : isEdit ? 'Güncelle' : 'Deal Oluştur'}
+            {saving ? 'Saving…' : isEdit ? 'Update' : 'Create Deal'}
           </Button>
         </div>
       </div>

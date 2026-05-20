@@ -20,10 +20,10 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Bir hata oluştu'); return }
+      if (!res.ok) { setError(data.error || 'An error occurred'); return }
       setSent(true)
     } catch {
-      setError('Bağlantı hatası')
+      setError('Connection error')
     } finally {
       setLoading(false)
     }
@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
             </svg>
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-[var(--t1)]">Şifremi Unuttum</h1>
+            <h1 className="text-xl font-bold text-[var(--t1)]">Forgot Password</h1>
             <p className="text-xs text-[var(--t4)] mt-0.5">Customer 360 · BI Technology</p>
           </div>
         </div>
@@ -74,31 +74,31 @@ export default function ForgotPasswordPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[var(--t1)]">Mail gönderildi</p>
+                <p className="text-sm font-semibold text-[var(--t1)]">Email sent</p>
                 <p className="text-xs text-[var(--t3)] mt-1 leading-relaxed">
-                  <span className="text-[var(--blue)]">{email}</span> adresine şifre sıfırlama linki gönderdik. Gelen kutunuzu kontrol edin.
+                  We sent a password reset link to <span className="text-[var(--blue)]">{email}</span>. Check your inbox.
                 </p>
-                <p className="text-xs text-[var(--t4)] mt-2">Link 1 saat geçerlidir.</p>
+                <p className="text-xs text-[var(--t4)] mt-2">The link is valid for 1 hour.</p>
               </div>
               <button
                 onClick={() => navigate('/login')}
                 className="text-xs text-[var(--blue)] hover:underline"
               >
-                Giriş sayfasına dön
+                Back to login
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-xs text-[var(--t3)] leading-relaxed">
-                Kayıtlı e-posta adresinizi girin. Şifre sıfırlama linki göndereceğiz.
+                Enter your registered email address. We will send you a password reset link.
               </p>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">E-posta</label>
+                <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Email</label>
                 <Input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="ad.soyad@bitechnology.com"
+                  placeholder="firstname.lastname@bitechnology.com"
                   autoFocus
                   required
                 />
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
               )}
 
               <Button variant="primary" type="submit" disabled={loading} className="w-full justify-center">
-                {loading ? 'Gönderiliyor…' : 'Link Gönder'}
+                {loading ? 'Sending…' : 'Send Link'}
               </Button>
 
               <button
@@ -117,7 +117,7 @@ export default function ForgotPasswordPage() {
                 onClick={() => navigate('/login')}
                 className="w-full text-center text-xs text-[var(--t4)] hover:text-[var(--t2)] transition-colors"
               >
-                ← Giriş sayfasına dön
+                ← Back to login
               </button>
             </form>
           )}

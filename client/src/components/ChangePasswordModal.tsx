@@ -16,8 +16,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (next !== confirm) { setError('Yeni şifreler eşleşmiyor'); return }
-    if (next.length < 6) { setError('Yeni şifre en az 6 karakter olmalı'); return }
+    if (next !== confirm) { setError('New passwords do not match'); return }
+    if (next.length < 6) { setError('New password must be at least 6 characters'); return }
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/auth/change-password', {
@@ -27,10 +27,10 @@ export default function ChangePasswordModal({ onClose }: Props) {
         body: JSON.stringify({ currentPassword: current, newPassword: next }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Bir hata oluştu'); return }
+      if (!res.ok) { setError(data.error || 'An error occurred'); return }
       setDone(true)
     } catch {
-      setError('Bağlantı hatası')
+      setError('Connection error')
     } finally {
       setLoading(false)
     }
@@ -43,7 +43,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
         style={{ background: 'rgba(22, 30, 54, 0.97)' }}
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-bold text-[var(--t1)]">Şifre Değiştir</h2>
+          <h2 className="text-sm font-bold text-[var(--t1)]">Change Password</h2>
           <button onClick={onClose} className="text-[var(--t4)] hover:text-[var(--t2)] transition-colors text-lg leading-none">×</button>
         </div>
 
@@ -58,17 +58,17 @@ export default function ChangePasswordModal({ onClose }: Props) {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[var(--t1)]">Şifre güncellendi</p>
-              <p className="text-xs text-[var(--t3)] mt-1">Bir sonraki girişinizde yeni şifrenizi kullanın.</p>
+              <p className="text-sm font-semibold text-[var(--t1)]">Password updated</p>
+              <p className="text-xs text-[var(--t3)] mt-1">Use your new password on your next login.</p>
             </div>
             <Button variant="primary" className="w-full justify-center" onClick={onClose}>
-              Tamam
+              OK
             </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Mevcut Şifre</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Current Password</label>
               <Input
                 type="password"
                 value={current}
@@ -82,17 +82,17 @@ export default function ChangePasswordModal({ onClose }: Props) {
             <div className="h-px bg-[var(--brd)] my-1" />
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Yeni Şifre</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">New Password</label>
               <Input
                 type="password"
                 value={next}
                 onChange={e => setNext(e.target.value)}
-                placeholder="En az 6 karakter"
+                placeholder="At least 6 characters"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Yeni Şifre Tekrar</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Confirm New Password</label>
               <Input
                 type="password"
                 value={confirm}
@@ -108,10 +108,10 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
             <div className="flex gap-2 pt-1">
               <Button type="button" variant="ghost" className="flex-1 justify-center" onClick={onClose}>
-                İptal
+                Cancel
               </Button>
               <Button type="submit" variant="primary" className="flex-1 justify-center" disabled={loading}>
-                {loading ? 'Kaydediliyor…' : 'Kaydet'}
+                {loading ? 'Saving…' : 'Save'}
               </Button>
             </div>
           </form>

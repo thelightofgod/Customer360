@@ -136,9 +136,9 @@ export default function OverviewTab({ account, onRefresh }: Props) {
               Partner
             </div>
             {account.partner_name && <InfoRow label="Partner" value={account.partner_name} />}
-            {account.partner_margin != null && <InfoRow label="Marj" value={`${account.partner_margin}%`} />}
-            {account.partner_license_price != null && <InfoRow label="Partner Lisans Bedeli" value={fmtCurrency(account.partner_license_price)} />}
-            {account.currency && <InfoRow label="Kur / Para Birimi" value={account.currency} />}
+            {account.partner_margin != null && <InfoRow label="Margin" value={`${account.partner_margin}%`} />}
+            {account.partner_license_price != null && <InfoRow label="Partner License Price" value={fmtCurrency(account.partner_license_price)} />}
+            {account.currency && <InfoRow label="Currency" value={account.currency} />}
           </div>
         )}
 
@@ -149,12 +149,12 @@ export default function OverviewTab({ account, onRefresh }: Props) {
           >
             <div className="text-xs font-bold uppercase tracking-[0.8px] text-[var(--t4)] mb-4 flex items-center gap-2">
               <div className="w-1.5 h-3.5 rounded-full" style={{ background: 'linear-gradient(180deg, #1ad0e8, #14a8bc)' }} />
-              Fatura & Ek Bilgiler
+              Invoice & Additional Info
             </div>
-            {account.invoice_date && <InfoRow label="Fatura Tarihi" value={fmtDate(account.invoice_date) || '—'} />}
-            {account.payment_terms && <InfoRow label="Ödeme Vadesi" value={account.payment_terms} />}
-            {account.consulting_days && <InfoRow label="Danışmanlık" value={account.consulting_days} />}
-            {account.training_info && <InfoRow label="Eğitim" value={account.training_info} />}
+            {account.invoice_date && <InfoRow label="Invoice Date" value={fmtDate(account.invoice_date) || '—'} />}
+            {account.payment_terms && <InfoRow label="Payment Terms" value={account.payment_terms} />}
+            {account.consulting_days && <InfoRow label="Consulting" value={account.consulting_days} />}
+            {account.training_info && <InfoRow label="Training" value={account.training_info} />}
           </div>
         )}
 

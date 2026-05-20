@@ -13,15 +13,15 @@ interface Props {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  'Yeni Satış': 'var(--green)',
-  'Yenileme': 'var(--blue)',
-  'Ek Lisans': 'var(--amber)',
+  'New Sale': 'var(--green)',
+  'Renewal': 'var(--blue)',
+  'Add-on License': 'var(--amber)',
 }
 
 const STATUS_VARIANTS: Record<string, 'green' | 'blue' | 'muted'> = {
-  'Aktif': 'green',
-  'Teklif': 'blue',
-  'Tamamlandı': 'muted',
+  'Active': 'green',
+  'Proposal': 'blue',
+  'Completed': 'muted',
 }
 
 export default function DealsTab({ account }: Props) {
@@ -45,31 +45,31 @@ export default function DealsTab({ account }: Props) {
   async function handleDelete(id: string) {
     try {
       await api.deals.delete(id)
-      toast.success('Deal silindi')
+      toast.success('Deal deleted')
       setDeletingId(null)
       fetchDeals()
     } catch {
-      toast.error('Silinemedi')
+      toast.error('Failed to delete')
       setDeletingId(null)
     }
   }
 
-  if (loading) return <div className="text-center py-12 text-sm text-[var(--t4)]">Yükleniyor…</div>
+  if (loading) return <div className="text-center py-12 text-sm text-[var(--t4)]">Loading…</div>
 
   return (
     <>
       <div className="flex items-center justify-between mb-4">
         <div className="text-xs text-[var(--t4)]">{deals.length} deal</div>
         <Button variant="primary" onClick={() => setShowAdd(true)}>
-          <Plus className="w-3.5 h-3.5" /> Yeni Deal
+          <Plus className="w-3.5 h-3.5" /> New Deal
         </Button>
       </div>
 
       {deals.length === 0 ? (
         <div className="text-center py-16 text-[var(--t4)]">
           <div className="text-3xl mb-2 opacity-40">📋</div>
-          <div className="text-sm">Henüz deal girilmemiş</div>
-          <div className="text-xs mt-1 opacity-60">Yeni Satış, Yenileme veya Ek Lisans ekleyin</div>
+          <div className="text-sm">No deals yet</div>
+          <div className="text-xs mt-1 opacity-60">Add a New Sale, Renewal or Add-on License</div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -93,7 +93,7 @@ export default function DealsTab({ account }: Props) {
                       </Badge>
                       {deal.subscription_years && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t3)' }}>
-                          {deal.subscription_years} yıl
+                          {deal.subscription_years} yr
                         </span>
                       )}
                     </div>
@@ -102,7 +102,7 @@ export default function DealsTab({ account }: Props) {
                       {deal.contract_start && deal.contract_end && <span>→</span>}
                       {deal.contract_end && <span>{fmtDate(deal.contract_end)}</span>}
                       {deal.lines.length > 0 && (
-                        <span className="opacity-60">· {deal.lines.length} ürün</span>
+                        <span className="opacity-60">· {deal.lines.length} product{deal.lines.length !== 1 ? 's' : ''}</span>
                       )}
                     </div>
                   </div>
@@ -123,7 +123,7 @@ export default function DealsTab({ account }: Props) {
                       </button>
                       {deletingId === deal.id ? (
                         <div className="flex items-center gap-1.5">
-                          <button onClick={() => handleDelete(deal.id)} className="text-[10px] text-[var(--red)] hover:underline font-bold">Sil</button>
+                          <button onClick={() => handleDelete(deal.id)} className="text-[10px] text-[var(--red)] hover:underline font-bold">Del</button>
                           <button onClick={() => setDeletingId(null)} className="text-[10px] text-[var(--t4)] hover:underline">✕</button>
                         </div>
                       ) : (
@@ -143,7 +143,7 @@ export default function DealsTab({ account }: Props) {
                     {/* Products */}
                     {deal.lines.length > 0 && (
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.7px] text-[var(--t4)] mb-2">Ürünler</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.7px] text-[var(--t4)] mb-2">Products</div>
                         <div className="rounded-[10px] overflow-hidden" style={{ border: '1px solid var(--brd)' }}>
                           {deal.lines.map((line, i) => (
                             <div key={i} className="grid grid-cols-[2fr_60px_90px_90px_100px] gap-1 items-center px-4 py-2.5 text-xs"
@@ -165,7 +165,7 @@ export default function DealsTab({ account }: Props) {
                     {/* Payment Schedule */}
                     {deal.payment_schedule.length > 0 && (
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.7px] text-[var(--t4)] mb-2">Ödeme Takvimi</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.7px] text-[var(--t4)] mb-2">Payment Schedule</div>
                         <div className="rounded-[10px] overflow-hidden" style={{ border: '1px solid var(--brd)' }}>
                           {deal.payment_schedule.map((ps, i) => (
                             <div key={i} className="grid grid-cols-[1fr_1fr_120px_120px] gap-1 items-center px-4 py-2.5 text-xs"
@@ -183,21 +183,21 @@ export default function DealsTab({ account }: Props) {
                     {/* Extra info grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                       {deal.partner_name && <InfoChip label="Partner" value={deal.partner_name} />}
-                      {deal.partner_margin != null && <InfoChip label="Marj" value={`${deal.partner_margin}%`} />}
-                      {deal.partner_license_price != null && <InfoChip label="Partner Bedeli" value={fmtCurrency(deal.partner_license_price)} />}
-                      {deal.invoice_date && <InfoChip label="Fatura Tarihi" value={fmtDate(deal.invoice_date) || '—'} />}
-                      {deal.payment_terms && <InfoChip label="Ödeme Vadesi" value={deal.payment_terms} />}
-                      {deal.finance_contact && <InfoChip label="Finans Kontak" value={deal.finance_contact} />}
-                      {deal.consulting_days && <InfoChip label="Danışmanlık" value={deal.consulting_days} />}
-                      {deal.training_info && <InfoChip label="Eğitim" value={deal.training_info} />}
-                      {deal.currency && <InfoChip label="Kur" value={deal.currency} />}
+                      {deal.partner_margin != null && <InfoChip label="Margin" value={`${deal.partner_margin}%`} />}
+                      {deal.partner_license_price != null && <InfoChip label="Partner Price" value={fmtCurrency(deal.partner_license_price)} />}
+                      {deal.invoice_date && <InfoChip label="Invoice Date" value={fmtDate(deal.invoice_date) || '—'} />}
+                      {deal.payment_terms && <InfoChip label="Payment Terms" value={deal.payment_terms} />}
+                      {deal.finance_contact && <InfoChip label="Finance Contact" value={deal.finance_contact} />}
+                      {deal.consulting_days && <InfoChip label="Consulting" value={deal.consulting_days} />}
+                      {deal.training_info && <InfoChip label="Training" value={deal.training_info} />}
+                      {deal.currency && <InfoChip label="Currency" value={deal.currency} />}
                     </div>
 
                     {/* Ek Lisans info */}
-                    {deal.deal_type === 'Ek Lisans' && deal.remaining_months != null && (
+                    {deal.deal_type === 'Add-on License' && deal.remaining_months != null && (
                       <div className="grid grid-cols-2 gap-2">
-                        <InfoChip label="Kalan Ay" value={`${deal.remaining_months} ay`} />
-                        {deal.remaining_period_price != null && <InfoChip label="Kalan Dönem Net Tutar" value={fmtCurrency(deal.remaining_period_price)} />}
+                        <InfoChip label="Remaining Months" value={`${deal.remaining_months} months`} />
+                        {deal.remaining_period_price != null && <InfoChip label="Remaining Period Net Amount" value={fmtCurrency(deal.remaining_period_price)} />}
                       </div>
                     )}
 

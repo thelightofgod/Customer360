@@ -54,7 +54,7 @@ export default function PaymentScheduleSection({ schedules, accountName, onRefre
 
   async function handleSave() {
     if (!form.periodStart || !form.periodEnd || !form.amount) {
-      toast.error('Dönem başlangıç, bitiş ve tutar zorunludur')
+      toast.error('Period start, end and amount are required')
       return
     }
     setSaving(true)
@@ -66,7 +66,7 @@ export default function PaymentScheduleSection({ schedules, accountName, onRefre
           amount: Number(form.amount),
           invoiceDate: form.invoiceDate || null,
         })
-        toast.success('Satır güncellendi')
+        toast.success('Row updated')
       } else {
         await api.paymentSchedules.create({
           accountName,
@@ -75,12 +75,12 @@ export default function PaymentScheduleSection({ schedules, accountName, onRefre
           amount: Number(form.amount),
           invoiceDate: form.invoiceDate || null,
         })
-        toast.success('Satır eklendi')
+        toast.success('Row added')
       }
       cancelForm()
       onRefresh()
     } catch {
-      toast.error('Kaydedilemedi')
+      toast.error('Failed to save')
     } finally {
       setSaving(false)
     }
@@ -89,11 +89,11 @@ export default function PaymentScheduleSection({ schedules, accountName, onRefre
   async function handleDelete(id: string) {
     try {
       await api.paymentSchedules.delete(id)
-      toast.success('Satır silindi')
+      toast.success('Row deleted')
       setDeletingId(null)
       onRefresh()
     } catch {
-      toast.error('Silinemedi')
+      toast.error('Failed to delete')
       setDeletingId(null)
     }
   }
@@ -108,10 +108,10 @@ export default function PaymentScheduleSection({ schedules, accountName, onRefre
       <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--brd)]">
         <div className="text-xs font-bold uppercase tracking-[0.8px] text-[var(--t4)] flex items-center gap-2">
           <div className="w-1.5 h-3.5 rounded-full" style={{ background: 'linear-gradient(180deg, #f7aa28, #e89620)' }} />
-          Lisans Kiralama Dönemi / Ödeme Takvimi
+          License Rental Period / Payment Schedule
         </div>
         <Button size="sm" onClick={startAdd}>
-          <Plus className="w-3 h-3" /> Satır Ekle
+          <Plus className="w-3 h-3" /> Add Row
         </Button>
       </div>
 
@@ -121,15 +121,15 @@ export default function PaymentScheduleSection({ schedules, accountName, onRefre
             className="grid grid-cols-[1fr_1fr_120px_120px_64px] gap-1 px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.8px] text-[var(--t4)]"
             style={{ background: 'rgba(0,0,0,0.15)', borderBottom: '1px solid var(--brd)' }}
           >
-            <span>Dönem Başlangıcı</span>
-            <span>Dönem Bitişi</span>
-            <span className="text-right">Fatura Tutarı</span>
-            <span className="text-center">Fatura Tarihi</span>
+            <span>Period Start</span>
+            <span>Period End</span>
+            <span className="text-right">Invoice Amount</span>
+            <span className="text-center">Invoice Date</span>
             <span />
           </div>
 
           {schedules.length === 0 && !adding && (
-            <div className="text-center py-8 text-sm text-[var(--t4)]">Henüz ödeme planı eklenmemiş</div>
+            <div className="text-center py-8 text-sm text-[var(--t4)]">No payment schedule added yet</div>
           )}
 
           {schedules.map(s => (
@@ -198,7 +198,7 @@ export default function PaymentScheduleSection({ schedules, accountName, onRefre
 
       {schedules.length > 0 && (
         <div className="flex justify-between items-center px-5 py-3.5" style={{ background: 'rgba(0,0,0,0.15)', borderTop: '1px solid var(--brd)' }}>
-          <span className="text-xs font-bold uppercase tracking-[0.7px] text-[var(--t3)]">Toplam</span>
+          <span className="text-xs font-bold uppercase tracking-[0.7px] text-[var(--t3)]">Total</span>
           <span className="text-base font-bold font-mono" style={{ color: 'var(--green)', textShadow: '0 0 16px rgba(46,216,150,0.4)' }}>
             {fmtCurrency(totalAmount)}
           </span>

@@ -23,10 +23,10 @@ export default function LoginPage({ onLogin }: Props) {
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Giriş başarısız'); return }
+      if (!res.ok) { setError(data.error || 'Login failed'); return }
       onLogin(data.email)
     } catch {
-      setError('Bağlantı hatası')
+      setError('Connection error')
     } finally {
       setLoading(false)
     }
@@ -70,18 +70,18 @@ export default function LoginPage({ onLogin }: Props) {
           style={{ background: 'rgba(30, 38, 68, 0.85)', backdropFilter: 'blur(16px)' }}
         >
           <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">E-posta</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Email</label>
             <Input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="ad.soyad@bitechnology.com"
+              placeholder="firstname.lastname@bitechnology.com"
               autoFocus
               required
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Şifre</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">Password</label>
             <Input
               type="password"
               value={password}
@@ -96,7 +96,7 @@ export default function LoginPage({ onLogin }: Props) {
           )}
 
           <Button variant="primary" type="submit" disabled={loading} className="w-full justify-center">
-            {loading ? 'Giriş yapılıyor…' : 'Giriş Yap'}
+            {loading ? 'Signing in…' : 'Sign In'}
           </Button>
 
           <div className="text-center pt-1">
@@ -105,7 +105,7 @@ export default function LoginPage({ onLogin }: Props) {
               onClick={() => navigate('/forgot-password')}
               className="text-xs text-[var(--t4)] hover:text-[var(--blue)] transition-colors"
             >
-              Şifremi unuttum
+              Forgot password
             </button>
           </div>
         </form>

@@ -76,7 +76,7 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
     e.preventDefault()
 
     if (mode === 'existing' && prefilledAccount) {
-      if (!selectedContactId) { setError('Bir kontak seçin'); return }
+      if (!selectedContactId) { setError('Please select a contact'); return }
       setSaving(true); setError('')
       try {
         await api.contacts.update(selectedContactId, { accountName: prefilledAccount.name })
@@ -159,7 +159,7 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
                   : 'bg-[var(--bg3)] text-[var(--t3)] hover:text-[var(--t1)]'
               }`}
             >
-              Yeni Kontak
+              New Contact
             </button>
             <button
               type="button"
@@ -170,7 +170,7 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
                   : 'bg-[var(--bg3)] text-[var(--t3)] hover:text-[var(--t1)]'
               }`}
             >
-              Mevcut Kontak Ata
+              Assign Existing Contact
             </button>
           </div>
         )}
@@ -181,12 +181,12 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
             <Input
               value={contactSearch}
               onChange={e => setContactSearch(e.target.value)}
-              placeholder="İsim, rol veya account ara..."
+              placeholder="Search by name, role or account..."
               autoFocus
             />
             <div className="flex-1 overflow-y-auto space-y-1 pr-0.5">
               {filteredContacts.length === 0 ? (
-                <div className="text-sm text-[var(--t4)] py-8 text-center">Kontak bulunamadı</div>
+                <div className="text-sm text-[var(--t4)] py-8 text-center">No contacts found</div>
               ) : filteredContacts.map(c => (
                 <button
                   key={c.id}

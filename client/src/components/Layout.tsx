@@ -112,7 +112,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </div>
             <button
               onClick={() => setShowChangePw(true)}
-              title="Şifre değiştir"
+              title="Change password"
               className="text-[11px] text-[var(--t4)] hover:text-[var(--blue)] transition-colors px-1"
             >
               <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5">
@@ -122,7 +122,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </button>
             <button
               onClick={onLogout}
-              title="Çıkış yap"
+              title="Sign out"
               className="text-[11px] text-[var(--t4)] hover:text-[var(--red)] transition-colors px-1"
             >
               ⏻

@@ -166,7 +166,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
                 <textarea
                   value={form.address}
                   onChange={e => set('address', e.target.value)}
-                  placeholder="Firma adresi..."
+                  placeholder="Company address..."
                   rows={2}
                   className="w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 py-2 text-sm text-[var(--t1)] placeholder:text-[var(--t4)] focus:outline-none focus:border-[var(--blue)] transition-colors resize-none"
                 />
@@ -198,17 +198,17 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
               <div className="w-1 h-3 rounded-full" style={{ background: '#f7aa28' }} /> Partner
             </div>
             <div className="space-y-3">
-              <Field label="Partner Adı">
+              <Field label="Partner Name">
                 <Input value={form.partnerName} onChange={e => set('partnerName', e.target.value)} placeholder="e.g. Insight Analytics" />
               </Field>
               <div className="grid grid-cols-3 gap-3">
-                <Field label="Marj %">
+                <Field label="Margin %">
                   <Input type="number" min="0" max="100" value={form.partnerMargin} onChange={e => set('partnerMargin', e.target.value)} placeholder="20" />
                 </Field>
-                <Field label="Partner Lisans Bedeli (€)">
+                <Field label="Partner License Price (€)">
                   <Input type="number" min="0" value={form.partnerLicensePrice} onChange={e => set('partnerLicensePrice', e.target.value)} placeholder="0" />
                 </Field>
-                <Field label="Kur / Para Birimi">
+                <Field label="Currency">
                   <Input value={form.currency} onChange={e => set('currency', e.target.value)} placeholder="EUR" />
                 </Field>
               </div>
