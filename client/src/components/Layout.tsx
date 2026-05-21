@@ -18,6 +18,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     { path: '/', label: 'Accounts' },
     { path: '/subscriptions', label: 'Subscriptions' },
     { path: '/contacts', label: 'Contacts' },
+    { path: '/activity', label: 'Activity' },
   ]
 
   return (

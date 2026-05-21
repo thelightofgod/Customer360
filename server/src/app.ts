@@ -13,6 +13,7 @@ import activitiesRouter from './routes/activities'
 import subscriptionsRouter from './routes/subscriptions'
 import paymentSchedulesRouter from './routes/paymentSchedules'
 import dealsRouter from './routes/deals'
+import auditLogsRouter from './routes/auditLogs'
 
 const app = express()
 
@@ -37,6 +38,7 @@ app.use('/api/activities', requireAuth, activitiesRouter)
 app.use('/api/subscriptions', requireAuth, subscriptionsRouter)
 app.use('/api/payment-schedules', requireAuth, paymentSchedulesRouter)
 app.use('/api/deals', requireAuth, dealsRouter)
+app.use('/api/audit-logs', requireAuth, auditLogsRouter)
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

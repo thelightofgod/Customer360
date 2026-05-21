@@ -1,3 +1,14 @@
+export interface AuditLog {
+  id: string
+  timestamp: string
+  user_email: string
+  action: 'create' | 'update' | 'delete'
+  entity_type: 'account' | 'contact' | 'subscription' | 'deal' | 'payment_schedule'
+  entity_id: string
+  entity_name: string
+  changes: Record<string, { from: string; to: string }> | null
+}
+
 export interface Account {
   id: string
   name: string

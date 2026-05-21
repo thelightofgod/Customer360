@@ -6,7 +6,11 @@
       "Bash(timeout 8 npx tsx src/index.ts)",
       "Bash(npx tsc *)",
       "Bash(git add *)",
-      "Bash(dir C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\client\\\\src *)"
+      "Bash(dir C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\client\\\\src *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\server\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\server\\\\src\" -Recurse -Force | Select-Object FullName | ForEach-Object { $_.FullName -replace [regex]::Escape\\(\"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\server\\\\\"\\), \"\" })"
     ]
   }
 }

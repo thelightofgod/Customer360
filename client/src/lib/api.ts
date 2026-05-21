@@ -1,4 +1,4 @@
-import type { Account, AccountDetail, AccountSummaryStats, Contact, Activity, Ticket, SubscriptionDetail, Product, Deal } from '@/types'
+import type { Account, AccountDetail, AccountSummaryStats, Contact, Activity, Ticket, SubscriptionDetail, Product, Deal, AuditLog } from '@/types'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path)
@@ -93,6 +93,17 @@ export const api = {
     delete: (id: string) =>
       fetch(`/api/deals/${id}`, { method: 'DELETE' })
         .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),
+  },
+  auditLogs: {
+    list: (params?: { page?: number; limit?: number; action?: string; entityType?: string }) => {
+      const q = new URLSearchParams(
+        Object.fromEntries(
+          Object.entries({ page: params?.page, limit: params?.limit, action: params?.action, entityType: params?.entityType })
+            .filter(([, v]) => v != null && v !== '')
+        ) as Record<string, string>
+      ).toString()
+      return get<{ logs: AuditLog[]; total: number }>(`/api/audit-logs${q ? '?' + q : ''}`)
+    },
   },
   paymentSchedules: {
     create: (body: Record<string, unknown>) => post('/api/payment-schedules', body),
