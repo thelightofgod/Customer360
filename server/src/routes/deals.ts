@@ -41,6 +41,7 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
 
 router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' })
     const deal = await repo.getDeal(req.params.id)
     if (!deal) return res.status(404).json({ error: 'Deal not found' })
     res.json(deal)
@@ -64,6 +65,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
 router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' })
     let dealLabel = req.params.id
     let existingDoc: any = null
     try {
@@ -87,6 +89,7 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
 
 router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' })
     let dealLabel = req.params.id
     try {
       const doc = await getMongo().collection('Deals').findOne(

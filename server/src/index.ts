@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import path from 'path'
-import { connectMongo } from './db/mongo'
+import { connectMongo, ensureIndexes } from './db/mongo'
 import app from './app'
 
 const PORT = process.env.PORT || 8000
@@ -12,7 +12,8 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'))
 })
 
-connectMongo().then(() => {
+connectMongo().then(async () => {
+  await ensureIndexes()
   app.listen(PORT, () => {
     console.log(`Customer 360 running at http://localhost:${PORT}`)
   })

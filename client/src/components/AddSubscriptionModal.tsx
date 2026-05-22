@@ -147,8 +147,8 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
           productGroup: selectedProduct?.product_group || initialData!.product_group,
           quantity: qty,
           unit: selectedProduct?.unit_type || initialData!.unit_label,
-          listPrice: unitPriceNum || (catalogPrice ?? 0),
-          unitPrice: unitPriceNum || (catalogPrice ?? 0),
+          listPrice: initialData!.list_price ?? (catalogPrice ?? 0),
+          unitPrice: initialData!.unit_price,
           invoiceDate: form.invoiceDate || null,
         })
         toast.success('Subscription updated')

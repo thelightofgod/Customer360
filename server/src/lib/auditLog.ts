@@ -9,6 +9,11 @@ export type FieldMap = Record<string, { mongo: string; label: string }>
 function normalizeVal(val: unknown): string {
   if (val == null) return ''
   if (val instanceof Date) return val.toISOString().slice(0, 10)
+  if (typeof val === 'string') {
+    const stripped = val.replace(/,/g, '')
+    if (stripped !== '' && !isNaN(Number(stripped))) return stripped
+    return val
+  }
   return String(val)
 }
 

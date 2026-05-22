@@ -21,3 +21,11 @@ export function getMongo(): Db {
   if (!_db) throw new Error('MongoDB not connected — call connectMongo() first')
   return _db
 }
+
+export async function ensureIndexes(): Promise<void> {
+  const db = getMongo()
+  await Promise.all([
+    db.collection('AuditLogs').createIndex({ timestamp: -1 }),
+    db.collection('AuditLogs').createIndex({ entity_type: 1, timestamp: -1 }),
+  ])
+}

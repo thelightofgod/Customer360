@@ -665,10 +665,10 @@ export const mongoRepository = {
     return result.deletedCount === 1
   },
 
-  async deleteAccount(id: string): Promise<boolean> {
+  async deleteAccount(id: string): Promise<{ ok: boolean; name: string }> {
     const db = getMongo()
     const doc = await db.collection('Accounts').findOne({ _id: new ObjectId(id) })
-    if (!doc) return false
+    if (!doc) return { ok: false, name: id }
     const name: string = doc['Account Name']
     // Delete account first so a crash leaves orphaned children rather than a
     // child-less account document.
@@ -680,7 +680,7 @@ export const mongoRepository = {
       ])
       invalidateCache()
     }
-    return result.deletedCount === 1
+    return { ok: result.deletedCount === 1, name }
   },
 
   async getDeals(accountName: string): Promise<Deal[]> {

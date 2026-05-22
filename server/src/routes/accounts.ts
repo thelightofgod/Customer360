@@ -64,6 +64,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
 router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' })
     let accountName = req.params.id
     let existingDoc: any = null
     try {
@@ -83,18 +84,10 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
 
 router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    let accountName = req.params.id
-    try {
-      const doc = await getMongo().collection('Accounts').findOne(
-        { _id: new ObjectId(req.params.id) },
-        { projection: { 'Account Name': 1 } }
-      )
-      if (doc?.['Account Name']) accountName = doc['Account Name']
-    } catch {}
-
-    const ok = await repo.deleteAccount(req.params.id)
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' })
+    const { ok, name } = await repo.deleteAccount(req.params.id)
     if (!ok) return res.status(404).json({ error: 'Account not found' })
-    logActivity(req.userEmail!, 'delete', 'account', req.params.id, accountName)
+    logActivity(req.userEmail!, 'delete', 'account', req.params.id, name)
     res.json({ success: true })
   } catch (e) {
     next(e)
@@ -103,6 +96,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction
 
 router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' })
     const account = await repo.getAccount(req.params.id)
     if (!account) return res.status(404).json({ error: 'Account not found' })
     res.json(account)

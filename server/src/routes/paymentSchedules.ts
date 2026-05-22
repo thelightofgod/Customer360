@@ -31,6 +31,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
 router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' })
     let scheduleLabel = req.params.id
     let existingDoc: any = null
     try {
@@ -50,6 +51,7 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
 
 router.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' })
     let scheduleLabel = req.params.id
     try {
       const doc = await getMongo().collection('PaymentSchedules').findOne(
