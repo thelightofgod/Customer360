@@ -32,13 +32,13 @@ export default function AccountDetailPage() {
   const [showEditAccount, setShowEditAccount] = useState(false)
 
   function refreshAccount() {
-    if (id) api.accounts.get(id).then(setAccount).catch(console.error)
+    if (id) api.accounts.get(id).then(setAccount).catch(() => toast.error('Failed to refresh account'))
   }
 
   useEffect(() => {
     if (!id) return
     setLoading(true)
-    api.accounts.get(id).then(setAccount).catch(console.error).finally(() => setLoading(false))
+    api.accounts.get(id).then(setAccount).catch(() => toast.error('Failed to load account')).finally(() => setLoading(false))
   }, [id])
 
   async function handleDeleteContact(contactId: string) {

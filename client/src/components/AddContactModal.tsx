@@ -51,14 +51,14 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
   // Load accounts for new-without-prefill mode or edit mode (account is changeable)
   useEffect(() => {
     if (isEdit || !prefilledAccount) {
-      api.accounts.list({ limit: 999 }).then(d => setAccounts(d.accounts)).catch(console.error)
+      api.accounts.list({ limit: 999 }).then(d => setAccounts(d.accounts)).catch(() => toast.error('Failed to load accounts'))
     }
   }, [])
 
   // Load all contacts when switching to "existing" mode
   useEffect(() => {
     if (mode === 'existing') {
-      api.contacts.list({ limit: 999 }).then(d => setAllContacts(d.contacts)).catch(console.error)
+      api.contacts.list({ limit: 999 }).then(d => setAllContacts(d.contacts)).catch(() => toast.error('Failed to load contacts'))
     }
   }, [mode])
 
@@ -237,7 +237,7 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
             </Field>
 
             <Field label="Contact Name" required>
-              <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Emre Yılmaz" autoFocus />
+              <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. John Smith" autoFocus />
             </Field>
 
             <div className="grid grid-cols-2 gap-3">

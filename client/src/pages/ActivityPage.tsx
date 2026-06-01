@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Layout from '@/components/Layout'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 import type { AuditLog } from '@/types'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
@@ -146,7 +147,7 @@ export default function ActivityPage() {
     setLoading(true)
     api.auditLogs.list({ page, limit: LIMIT, action: actionFilter, entityType: entityFilter })
       .then(d => { setLogs(d.logs); setTotal(d.total) })
-      .catch(console.error)
+      .catch(() => toast.error('Failed to load activity log'))
       .finally(() => setLoading(false))
   }, [page, actionFilter, entityFilter])
 

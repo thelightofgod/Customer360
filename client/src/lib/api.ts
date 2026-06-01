@@ -68,7 +68,7 @@ export const api = {
   tickets: {
     list: (params?: { status?: string; priority?: string; account_id?: string }) => {
       const q = new URLSearchParams(
-        Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v)) as Record<string, string>
+        Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v != null && v !== '')) as Record<string, string>
       ).toString()
       return get<{ tickets: Ticket[]; total: number }>(`/api/tickets${q ? '?' + q : ''}`)
     },

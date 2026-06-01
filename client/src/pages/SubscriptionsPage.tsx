@@ -29,7 +29,7 @@ export default function SubscriptionsPage() {
     setLoading(true)
     api.subscriptions.list({ search: s, page: p, limit: PAGE_LIMIT })
       .then(d => { setSubs(d.subscriptions); setTotal(d.total) })
-      .catch(console.error)
+      .catch(() => toast.error('Failed to load subscriptions'))
       .finally(() => setLoading(false))
   }
 

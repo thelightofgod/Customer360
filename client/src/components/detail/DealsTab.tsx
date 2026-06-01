@@ -36,7 +36,7 @@ export default function DealsTab({ account }: Props) {
     setLoading(true)
     api.deals.list(account.name)
       .then(d => setDeals(d.deals))
-      .catch(console.error)
+      .catch(() => toast.error('Failed to load deals'))
       .finally(() => setLoading(false))
   }
 

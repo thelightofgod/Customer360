@@ -121,7 +121,7 @@ export default function AddDealModal({ accountName, defaultPartnerName, defaultC
           return match ? { ...line, productId: match.id } : line
         }))
       }
-    }).catch(console.error)
+    }).catch(() => toast.error('Failed to load products'))
   }, [])
 
   function set(field: string, value: string) {

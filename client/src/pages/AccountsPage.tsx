@@ -6,6 +6,7 @@ import AddAccountModal from '@/components/AddAccountModal'
 import Pagination from '@/components/ui/pagination'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
+import { toast } from '@/lib/toast'
 import type { Account, AccountSummaryStats } from '@/types'
 import { Plus } from 'lucide-react'
 
@@ -26,7 +27,7 @@ export default function AccountsPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    api.accounts.summary().then(setStats).catch(console.error)
+    api.accounts.summary().then(setStats).catch(() => toast.error('Failed to load summary'))
   }, [])
 
   function handleSearch(val: string) {
@@ -46,7 +47,7 @@ export default function AccountsPage() {
     api.accounts
       .list({ filter, search: debouncedSearch, sort, order, page, limit: PAGE_LIMIT })
       .then(d => { setAccounts(d.accounts); setTotal(d.total) })
-      .catch(console.error)
+      .catch(() => toast.error('Failed to load accounts'))
       .finally(() => setLoading(false))
   }, [filter, debouncedSearch, sort, order, page])
 
@@ -63,7 +64,7 @@ export default function AccountsPage() {
   function handleCreated() {
     setShowAdd(false)
     fetchAccounts()
-    api.accounts.summary().then(setStats).catch(console.error)
+    api.accounts.summary().then(setStats).catch(() => toast.error('Failed to load summary'))
   }
 
   return (

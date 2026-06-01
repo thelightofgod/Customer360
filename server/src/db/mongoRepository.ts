@@ -127,8 +127,8 @@ function docToDeal(doc: any): Deal {
   return {
     id: doc._id.toHexString(),
     account_name: doc['Account Name'] || '',
-    deal_type: doc['Deal Type'] || 'Yeni Satış',
-    deal_status: doc['Deal Status'] || 'Teklif',
+    deal_type: doc['Deal Type'] || 'New Sale',
+    deal_status: doc['Deal Status'] || 'Proposal',
     contract_start: toDateStr(doc['Contract Start']),
     contract_end: toDateStr(doc['Contract End']),
     subscription_years: doc['Subscription Years'] ?? null,
@@ -643,6 +643,7 @@ export const mongoRepository = {
       'Invoice Date': data.invoiceDate ? new Date(data.invoiceDate) : null,
     }
     const result = await getMongo().collection('PaymentSchedules').insertOne(doc)
+    invalidateCache()
     return result.insertedId.toHexString()
   },
 
@@ -657,11 +658,13 @@ export const mongoRepository = {
     const result = await getMongo().collection('PaymentSchedules').updateOne(
       { _id: new ObjectId(id) }, { $set: update }
     )
+    invalidateCache()
     return result.matchedCount === 1
   },
 
   async deletePaymentSchedule(id: string): Promise<boolean> {
     const result = await getMongo().collection('PaymentSchedules').deleteOne({ _id: new ObjectId(id) })
+    invalidateCache()
     return result.deletedCount === 1
   },
 

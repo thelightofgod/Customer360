@@ -40,7 +40,7 @@ export default function ContactsPage() {
     setLoading(true)
     api.contacts.list({ search: s, page: p, limit: PAGE_LIMIT })
       .then(d => { setContacts(d.contacts); setTotal(d.total) })
-      .catch(console.error)
+      .catch(() => toast.error('Failed to load contacts'))
       .finally(() => setLoading(false))
   }
 

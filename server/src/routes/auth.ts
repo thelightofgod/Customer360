@@ -76,7 +76,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: user.email,
-      subject: 'Şifre Sıfırlama — Customer 360',
+      subject: 'Password Reset — Customer 360',
       html: buildResetEmail(user.name || user.email, resetUrl),
     })
 
@@ -91,14 +91,14 @@ router.post('/reset-password', async (req: Request, res: Response) => {
   try {
     const { token, password } = req.body
     if (!token || !password) return res.status(400).json({ error: 'Token and password required' })
-    if (password.length < 6) return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı' })
+    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' })
 
     const user = await getMongo().collection('Users').findOne({
       resetToken: token,
       resetTokenExpiry: { $gt: new Date() },
     })
 
-    if (!user) return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş link' })
+    if (!user) return res.status(400).json({ error: 'Invalid or expired reset link' })
 
     const hash = await bcrypt.hash(password, 10)
     await getMongo().collection('Users').updateOne(
@@ -117,13 +117,13 @@ router.post('/change-password', requireAuth, async (req: AuthRequest, res: Respo
   try {
     const { currentPassword, newPassword } = req.body
     if (!currentPassword || !newPassword) return res.status(400).json({ error: 'All fields required' })
-    if (newPassword.length < 6) return res.status(400).json({ error: 'Yeni şifre en az 6 karakter olmalı' })
+    if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' })
 
     const user = await getMongo().collection('Users').findOne({ email: req.userEmail })
     if (!user) return res.status(404).json({ error: 'User not found' })
 
     const valid = await bcrypt.compare(currentPassword, user.password)
-    if (!valid) return res.status(400).json({ error: 'Mevcut şifre yanlış' })
+    if (!valid) return res.status(400).json({ error: 'Current password is incorrect' })
 
     const hash = await bcrypt.hash(newPassword, 10)
     await getMongo().collection('Users').updateOne(
@@ -159,27 +159,27 @@ function buildResetEmail(name: string, resetUrl: string): string {
         </tr>
         <tr>
           <td style="padding:28px 32px;">
-            <p style="margin:0 0 8px;color:#94a3b8;font-size:13px;">Merhaba, <span style="color:#e2e8f0;font-weight:600;">${name}</span></p>
+            <p style="margin:0 0 8px;color:#94a3b8;font-size:13px;">Hello, <span style="color:#e2e8f0;font-weight:600;">${name}</span></p>
             <p style="margin:0 0 24px;color:#94a3b8;font-size:14px;line-height:1.6;">
-              Şifre sıfırlama talebinde bulundunuz. Aşağıdaki butona tıklayarak yeni şifrenizi belirleyebilirsiniz.
-              Bu link <strong style="color:#e2e8f0;">1 saat</strong> geçerlidir.
+              You requested a password reset. Click the button below to set a new password.
+              This link is valid for <strong style="color:#e2e8f0;">1 hour</strong>.
             </p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr><td align="center">
                 <a href="${resetUrl}" style="display:inline-block;padding:13px 32px;background:linear-gradient(135deg,#5b9eff,#3b7fe0);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:600;letter-spacing:0.2px;">
-                  Şifremi Sıfırla
+                  Reset Password
                 </a>
               </td></tr>
             </table>
             <p style="margin:24px 0 0;color:#475569;font-size:12px;line-height:1.5;">
-              Bu işlemi siz yapmadıysanız bu maili görmezden gelebilirsiniz. Şifreniz değişmeyecektir.
+              If you did not request this, you can safely ignore this email. Your password will not change.
             </p>
           </td>
         </tr>
         <tr>
           <td style="padding:16px 32px;border-top:1px solid rgba(255,255,255,0.05);">
             <p style="margin:0;color:#334155;font-size:11px;text-align:center;">
-              Buton çalışmıyorsa bu linki kopyalayın:<br>
+              If the button doesn't work, copy this link:<br>
               <span style="color:#475569;word-break:break-all;">${resetUrl}</span>
             </p>
           </td>

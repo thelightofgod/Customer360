@@ -88,10 +88,10 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
         const match = d.products.find(p => p.name === initialData.product_name)
         if (match) setForm(f => ({ ...f, productId: match.id, unitPriceOverride: String(match.list_price) }))
       }
-    }).catch(console.error)
+    }).catch(() => toast.error('Failed to load products'))
 
     if (!prefilledAccount && !isEdit) {
-      api.accounts.list({ limit: 999 }).then(d => setAccounts(d.accounts)).catch(console.error)
+      api.accounts.list({ limit: 999 }).then(d => setAccounts(d.accounts)).catch(() => toast.error('Failed to load accounts'))
     }
   }, [])
 
@@ -345,7 +345,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
             </Field>
           )}
 
-          {/* Yıllık Tutar */}
+          {/* Annual Total */}
           {annualTotal != null && annualTotal > 0 && (
             <div className="flex justify-between items-center px-3 py-2.5 bg-[var(--green)]/10 border border-[var(--green)]/20 rounded-[10px]">
               <span className="text-xs text-[var(--t3)]">Annual Total</span>
