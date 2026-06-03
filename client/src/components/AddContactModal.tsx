@@ -13,7 +13,7 @@ interface Props {
   initialData?: Contact
 }
 
-const TYPES = ['Sponsor', 'Technical', 'Business', 'Admin', 'General']
+const TYPES = ['sponsor', 'technical', 'business', 'admin', 'general']
 const selectClass = 'h-9 w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 text-sm text-[var(--t1)] focus:outline-none focus:border-[var(--blue)] transition-colors appearance-none cursor-pointer'
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -40,9 +40,7 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
     accountName: initialData?.account_name || prefilledAccount?.name || '',
     name: initialData?.name || '',
     role: initialData?.role || '',
-    contactType: initialData?.contact_type
-      ? initialData.contact_type.charAt(0).toUpperCase() + initialData.contact_type.slice(1)
-      : 'Sponsor',
+    contactType: initialData?.contact_type ? initialData.contact_type.toLowerCase() : 'sponsor',
     email: initialData?.email || '',
     phone: initialData?.phone || '',
     notes: '',
@@ -246,7 +244,7 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
               </Field>
               <Field label="Contact Type">
                 <select className={selectClass} value={form.contactType} onChange={e => set('contactType', e.target.value)}>
-                  {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  {TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                 </select>
               </Field>
             </div>
