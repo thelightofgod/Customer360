@@ -16,6 +16,7 @@ const TYPE_VARIANTS: Record<string, 'purple' | 'blue' | 'green' | 'muted'> = {
   technical: 'blue',
   business: 'green',
   admin: 'muted',
+  general: 'blue',
 }
 
 export default function ContactsTab({ account, onAdd, onEdit, onDelete }: Props) {

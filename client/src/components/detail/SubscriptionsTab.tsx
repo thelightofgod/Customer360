@@ -30,11 +30,6 @@ function fmtDateInput(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
-function fmtDateTR(iso: string): string {
-  if (!iso) return ''
-  const [y, m, d] = iso.split('-')
-  return `${d}.${m}.${y}`
-}
 
 function autoGenerate(commitmentEndDate: string, years: number, annualAmount: number): Period[] {
   const endFull = new Date(commitmentEndDate)
@@ -261,7 +256,7 @@ export default function SubscriptionsTab({ account, onAdd, onEdit, onDelete, onR
                           return (
                             <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-[8px] hover:bg-white/[0.03] group">
                               <span className="flex-1 text-xs font-mono" style={{ color: 'var(--blue)' }}>
-                                {fmtDateTR(p.period_start) || '—'} – {fmtDateTR(p.period_end) || '—'}
+                                {fmtDate(p.period_start) || '—'} – {fmtDate(p.period_end) || '—'}
                               </span>
                               <span className="w-14 flex justify-end">
                                 {pct !== null && (

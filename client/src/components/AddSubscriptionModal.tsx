@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
 import { toast } from '@/lib/toast'
-import { fmtCurrency } from '@/lib/utils'
+import { fmtCurrency, fmtDate } from '@/lib/utils'
 import type { Account, Product, SubscriptionDetail } from '@/types'
 
 interface Props {
@@ -27,11 +27,6 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-function fmtDateTR(iso: string): string {
-  if (!iso) return ''
-  const [y, m, d] = iso.split('-')
-  return `${d}.${m}.${y}`
-}
 
 function autoGeneratePeriods(
   startDate: string,
@@ -377,7 +372,7 @@ export default function AddSubscriptionModal({ onClose, onCreated, prefilledAcco
                 {previewPeriods.map((p, i) => (
                   <div key={i} className="flex items-center gap-3 px-3 py-2">
                     <span className="flex-1 text-xs font-mono" style={{ color: 'var(--blue)' }}>
-                      {fmtDateTR(p.periodStart)} – {fmtDateTR(p.periodEnd)}
+                      {fmtDate(p.periodStart)} – {fmtDate(p.periodEnd)}
                     </span>
                     {p.originalAmount != null && p.originalAmount > p.amount && (
                       <span className="text-xs font-mono text-[var(--t4)] line-through">{fmtCurrency(p.originalAmount)}</span>

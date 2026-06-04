@@ -11,7 +11,7 @@ import type { Contact } from '@/types'
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 
 const TYPE_VARIANTS: Record<string, 'purple' | 'blue' | 'green' | 'muted'> = {
-  sponsor: 'purple', technical: 'blue', business: 'green', admin: 'muted',
+  sponsor: 'purple', technical: 'blue', business: 'green', admin: 'muted', general: 'blue',
 }
 
 const TYPE_COLORS: Record<string, string> = {

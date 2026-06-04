@@ -17,7 +17,8 @@ export function fmtCurrency(n: number | null | undefined): string {
 
 export function fmtDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  const d = new Date(dateStr)
+  return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`
 }
 
 export function licenseModelVariant(model: string | null): 'blue' | 'amber' | 'purple' | 'muted' {

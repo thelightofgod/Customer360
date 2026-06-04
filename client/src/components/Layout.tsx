@@ -9,7 +9,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation()
   const { email, onLogout } = useAuth()
   const [showChangePw, setShowChangePw] = useState(false)
-  const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  const now = new Date()
+  const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`
 
   const initials = email ? email.split('.').map(p => p[0]?.toUpperCase()).join('').slice(0, 2) : 'U'
   const displayName = email ? email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') : ''
