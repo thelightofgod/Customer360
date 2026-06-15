@@ -13,7 +13,13 @@
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\server\\\\src\" -Recurse -Force | Select-Object FullName | ForEach-Object { $_.FullName -replace [regex]::Escape\\(\"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\server\\\\\"\\), \"\" })",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\sales-register\" -Recurse -Force)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\sales-register\" -File | Where-Object { $_.Name -notlike \"package-lock.json\" })",
+      "Bash(ping -n 5 127.0.0.1)",
+      "PowerShell(Get-NetTCPConnection *)"
     ]
   }
 }

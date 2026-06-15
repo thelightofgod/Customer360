@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb'
 import { getMongo } from './mongo'
 import type {
   Account, AccountDetail, AccountSummaryStats,
-  Activity, Contact, Product, ProductDetail, Ticket, SubscriptionDetail, PaymentSchedule, Deal
+  Activity, Contact, Product, ProductDetail, Ticket, SubscriptionDetail, PaymentSchedule, Deal, Sale
 } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -29,10 +29,31 @@ function invalidateCache() { rawCache = null }
 
 // ---------------------------------------------------------------------------
 
+// Turkish-aware normalization: İstanbul→istanbul, Şirket→sirket, etc.
+function trNorm(s: string): string {
+  return s.toLocaleLowerCase('tr')
+    .replace(/ş/g, 's').replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u').replace(/ö/g, 'o')
+    .replace(/ı/g, 'i').replace(/ç/g, 'c')
+}
+
 // "285,000" → 285000   |   "3,200" → 3200   |   42 → 42
 function parseAmount(val: unknown): number {
   if (typeof val === 'number') return val
   if (typeof val === 'string') return parseFloat(val.replace(/,/g, '')) || 0
+  return 0
+}
+
+// Handles both Turkish ("7.000,00 €") and US ("7,000.00") number formats
+function parsePrice(val: unknown): number {
+  if (typeof val === 'number') return val
+  if (typeof val === 'string') {
+    const s = val.replace(/[^0-9.,]/g, '')
+    if (!s) return 0
+    if (/,\d{2}$/.test(s)) return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
+    if (/^\d{1,3}(\.\d{3})+$/.test(s)) return parseFloat(s.replace(/\./g, '')) || 0
+    return parseFloat(s.replace(/,/g, '')) || 0
+  }
   return 0
 }
 
@@ -54,6 +75,40 @@ function accountColor(name: string): string {
   let h = 0
   for (const ch of name) h = ((h << 5) - h) + ch.charCodeAt(0)
   return palette[Math.abs(h) % palette.length]
+}
+
+// A Sale is "active" if its commitment period hasn't ended yet.
+function isSaleActive(s: any): boolean {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  if (s.lisans_turu === 'yeni') {
+    // Use last period end date if available
+    if (Array.isArray(s.lisans_periodlari) && s.lisans_periodlari.length > 0) {
+      const last = s.lisans_periodlari[s.lisans_periodlari.length - 1]
+      if (last.bitis) return new Date(last.bitis) >= today
+    }
+    // Fallback: fatura_tarihi + yil_sayisi years
+    if (s.fatura_tarihi && s.yil_sayisi) {
+      const end = new Date(s.fatura_tarihi)
+      end.setFullYear(end.getFullYear() + (parseInt(s.yil_sayisi) || 0))
+      return end >= today
+    }
+    return false // no date info → exclude from ARR
+  } else {
+    if (s.taahhut_bitis_tarihi) return new Date(s.taahhut_bitis_tarihi) >= today
+    return false
+  }
+}
+
+function computeArrFromSales(sales: any[]): number {
+  return sales
+    .filter(isSaleActive)
+    .reduce((sum, s) => {
+      if (typeof s.annual_value_eur === 'number') return sum + s.annual_value_eur
+      const val = s.lisans_turu === 'yeni' ? s.indirimli_musteri_bedeli_yeni : s.indirimli_musteri_bedeli_ek
+      return sum + parsePrice(val)
+    }, 0)
 }
 
 // "Emre Yılmaz" → "EY"
@@ -103,6 +158,48 @@ function docToAccount(doc: any, subs: any[]): Account {
     payment_terms: doc['Payment Terms'] || null,
     consulting_days: doc['Consulting Days'] || null,
     training_info: doc['Training Info'] || null,
+  }
+}
+
+function docToSale(doc: any): Sale {
+  return {
+    id: doc._id.toHexString(),
+    firma_adi: doc.firma_adi || '',
+    firma_adresi: doc.firma_adresi || null,
+    kontak_adi: doc.kontak_adi || null,
+    kontak_gorevi: doc.kontak_gorevi || null,
+    kontak_email: doc.kontak_email || null,
+    finans_kontak_adi: doc.finans_kontak_adi || null,
+    finans_kontak_gorevi: doc.finans_kontak_gorevi || null,
+    finans_kontak_email: doc.finans_kontak_email || null,
+    lisans_turu: doc.lisans_turu || 'yeni',
+    yil_sayisi: doc.yil_sayisi || null,
+    musteri_liste_bedeli_yeni: doc.musteri_liste_bedeli_yeni || null,
+    indirimli_musteri_bedeli_yeni: doc.indirimli_musteri_bedeli_yeni || null,
+    musteri_liste_bedeli_ek: doc.musteri_liste_bedeli_ek || null,
+    indirimli_musteri_bedeli_ek: doc.indirimli_musteri_bedeli_ek || null,
+    taahhut_bitis_tarihi: doc.taahhut_bitis_tarihi || null,
+    kalan_ay: doc.kalan_ay || null,
+    kalan_donem_net_tutar: doc.kalan_donem_net_tutar || null,
+    urunler: doc.urunler || {},
+    partner: doc.partner || null,
+    partner_marj: doc.partner_marj || null,
+    partner_lisans_bedeli: doc.partner_lisans_bedeli || null,
+    kur: doc.kur || null,
+    fatura_tarihi: doc.fatura_tarihi || null,
+    odeme_vadesi: doc.odeme_vadesi || null,
+    danismanlik_adam_gun: doc.danismanlik_adam_gun || null,
+    egitim: doc.egitim || null,
+    not: doc.not || null,
+    lisans_periodlari: doc.lisans_periodlari || null,
+    contacts: Array.isArray(doc.contacts) ? doc.contacts : null,
+    account_id: doc.account_id || null,
+    deal_id: doc.deal_id || null,
+    subscription_ids: doc.subscription_ids || null,
+    annual_value_eur: typeof doc.annual_value_eur === 'number' ? doc.annual_value_eur : null,
+    total_value_eur: typeof doc.total_value_eur === 'number' ? doc.total_value_eur : null,
+    created_at: doc.created_at instanceof Date ? doc.created_at.toISOString().slice(0, 10) : (doc.created_at || new Date().toISOString().slice(0, 10)),
+    created_by: doc.created_by || null,
   }
 }
 
@@ -231,6 +328,8 @@ function docToSubscription(s: any, accountId = '', productMap?: Map<string, any>
           original_amount: p['Original Amount (€)'] != null ? parseAmount(p['Original Amount (€)']) : null,
         }))
       : null,
+    lisans_turu: s['License Type'] || null,
+    sale_id: s['Sale ID'] || null,
   }
 }
 
@@ -248,19 +347,30 @@ export const mongoRepository = {
     else if (filter === 'renewal') rows = rows.filter(r => { const d = daysUntil(r.renewal_date); return d > 0 && d <= 120 })
 
     if (search) {
-      const s = search.toLowerCase()
-      rows = rows.filter(r =>
-        r.name.toLowerCase().includes(s) ||
-        (r.sector || '').toLowerCase().includes(s) ||
-        (r.csm || '').toLowerCase().includes(s)
-      )
+      const tokens = search.trim().split(/\s+/).map(trNorm).filter(Boolean)
+      rows = rows.filter(r => {
+        const name = trNorm(r.name)
+        const extra = trNorm((r.sector || '') + ' ' + (r.csm || ''))
+        return tokens.every(t => name.includes(t) || extra.includes(t))
+      })
+      // Relevance sort: exact start > word-start > contains
+      const q = trNorm(search.trim())
+      rows.sort((a, b) => {
+        const score = (n: string) => {
+          const nn = trNorm(n)
+          if (nn.startsWith(q)) return 0
+          if (nn.split(/\s+/).some(w => w.startsWith(tokens[0]))) return 1
+          return 2
+        }
+        return score(a.name) - score(b.name)
+      })
+    } else {
+      const sign = order === 'desc' ? -1 : 1
+      if (sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name, 'tr') * sign)
+      else if (sort === 'arr') rows.sort((a, b) => (a.arr - b.arr) * sign)
+      else if (sort === 'tickets') rows.sort((a, b) => (a.open_tickets - b.open_tickets) * sign)
+      else if (sort === 'renewal') rows.sort((a, b) => (daysUntil(a.renewal_date) - daysUntil(b.renewal_date)) * sign)
     }
-
-    const sign = order === 'desc' ? -1 : 1
-    if (sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name) * sign)
-    else if (sort === 'arr') rows.sort((a, b) => (a.arr - b.arr) * sign)
-    else if (sort === 'tickets') rows.sort((a, b) => (a.open_tickets - b.open_tickets) * sign)
-    else if (sort === 'renewal') rows.sort((a, b) => (daysUntil(a.renewal_date) - daysUntil(b.renewal_date)) * sign)
 
     const total = rows.length
     const start = (page - 1) * limit
@@ -295,12 +405,14 @@ export const mongoRepository = {
     if (!doc) return null
 
     const name: string = doc['Account Name'] || ''
+    const nameRegex = { $regex: `^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }
 
-    const [rawSubs, rawContacts, rawProducts, rawSchedules] = await Promise.all([
-      db.collection('Subscriptions').find({ 'Account Name': name }).toArray(),
-      db.collection('Contacts').find({ 'Account Name': name }).toArray(),
+    const [rawSubs, rawContacts, rawProducts, rawSchedules, rawSales] = await Promise.all([
+      db.collection('Subscriptions').find({ 'Account Name': nameRegex }).toArray(),
+      db.collection('Contacts').find({ 'Account Name': nameRegex }).toArray(),
       db.collection('Product Catalog').find({}).toArray(),
-      db.collection('PaymentSchedules').find({ 'Account Name': name }).toArray(),
+      db.collection('PaymentSchedules').find({ 'Account Name': nameRegex }).toArray(),
+      db.collection('Sales').find({ account_id: id }).toArray(),
     ])
 
     const productMap = new Map(rawProducts.map(p => [p['Product Name'] as string, p]))
@@ -328,7 +440,8 @@ export const mongoRepository = {
       invoice_date: toDateStr(d['Invoice Date']),
     }))
 
-    return { ...docToAccount(doc, rawSubs), contacts, tickets: [], activities: [], subscriptions, notes: doc['Notes'] || '', payment_schedules }
+    const freshArr = computeArrFromSales(rawSales)
+    return { ...docToAccount(doc, rawSubs), arr: freshArr, contacts, tickets: [], activities: [], subscriptions, notes: doc['Notes'] || '', payment_schedules }
   },
 
   async getProducts(): Promise<Product[]> {
@@ -422,11 +535,11 @@ export const mongoRepository = {
       }))
 
     if (search) {
-      const s = search.toLowerCase()
+      const s = trNorm(search)
       results = results.filter(c =>
-        c.name.toLowerCase().includes(s) ||
-        (c.account_name || '').toLowerCase().includes(s) ||
-        (c.role || '').toLowerCase().includes(s)
+        trNorm(c.name).includes(s) ||
+        trNorm(c.account_name || '').includes(s) ||
+        trNorm(c.role || '').includes(s)
       )
     }
 
@@ -457,8 +570,12 @@ export const mongoRepository = {
   async getAllSubscriptions(
     search?: string, page = 1, limit = 20
   ): Promise<{ subscriptions: SubscriptionDetail[]; total: number }> {
-    const { subs: rawSubs } = await getRawCollections()
-    let results: SubscriptionDetail[] = rawSubs.map(s => docToSubscription(s))
+    const { subs: rawSubs, accounts: rawAccounts } = await getRawCollections()
+    const accountNameToId = new Map(rawAccounts.map(a => [a['Account Name'] as string, a._id.toHexString()]))
+    let results: SubscriptionDetail[] = rawSubs.map(s => {
+      const accountId = accountNameToId.get(s['Account Name'] as string) || ''
+      return docToSubscription(s, accountId)
+    })
 
     if (search) {
       const s = search.toLowerCase()
@@ -481,6 +598,8 @@ export const mongoRepository = {
     subscriptionYears?: number | null; commitmentEndDate?: string
     invoiceDate?: string | null
     paymentPeriods?: Array<{ periodStart: string; periodEnd: string; amount: number; originalAmount?: number | null }> | null
+    lisansTuru?: 'yeni' | 'ek' | null
+    saleId?: string | null
   }): Promise<string> {
     const total = data.quantity * data.unitPrice
     const doc: Record<string, unknown> = {
@@ -497,6 +616,8 @@ export const mongoRepository = {
       'Commitment End Date': data.commitmentEndDate ? new Date(data.commitmentEndDate) : null,
       'Invoice Date': data.invoiceDate ? new Date(data.invoiceDate) : null,
       'Notes': data.notes || '',
+      'License Type': data.lisansTuru ?? null,
+      'Sale ID': data.saleId ?? null,
       'Payment Periods': data.paymentPeriods
         ? data.paymentPeriods.map(p => ({
             'Period Start': new Date(p.periodStart),
@@ -718,6 +839,65 @@ export const mongoRepository = {
   async deleteDeal(id: string): Promise<boolean> {
     const result = await getMongo().collection('Deals').deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount === 1
+  },
+
+  async getSales(search = '', page = 1, limit = 40, lisansTuru = ''): Promise<{ sales: Sale[]; total: number }> {
+    const db = getMongo()
+    const filter: Record<string, unknown> = {}
+    if (search) filter.firma_adi = { $regex: search, $options: 'i' }
+    if (lisansTuru) filter.lisans_turu = lisansTuru
+    const [total, docs] = await Promise.all([
+      db.collection('Sales').countDocuments(filter),
+      db.collection('Sales').find(filter).sort({ created_at: -1 }).skip((page - 1) * limit).limit(limit).toArray(),
+    ])
+    return { sales: docs.map(docToSale), total }
+  },
+
+  async getSale(id: string): Promise<Sale | null> {
+    if (!ObjectId.isValid(id)) return null
+    const doc = await getMongo().collection('Sales').findOne({ _id: new ObjectId(id) })
+    return doc ? docToSale(doc) : null
+  },
+
+  async createSale(data: Record<string, unknown>, userEmail: string): Promise<string> {
+    const doc = { ...data, created_at: new Date(), created_by: userEmail }
+    const result = await getMongo().collection('Sales').insertOne(doc)
+    return result.insertedId.toHexString()
+  },
+
+  async updateSale(id: string, data: Record<string, unknown>): Promise<boolean> {
+    if (!ObjectId.isValid(id)) return false
+    const result = await getMongo().collection('Sales').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: data }
+    )
+    return result.matchedCount === 1
+  },
+
+  async deleteSale(id: string): Promise<boolean> {
+    if (!ObjectId.isValid(id)) return false
+    const result = await getMongo().collection('Sales').deleteOne({ _id: new ObjectId(id) })
+    return result.deletedCount === 1
+  },
+
+  async findAccountIdByName(name: string): Promise<string | null> {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const doc = await getMongo().collection('Accounts').findOne(
+      { 'Account Name': { $regex: `^${escaped}$`, $options: 'i' } },
+      { projection: { _id: 1 } }
+    )
+    return doc ? doc._id.toHexString() : null
+  },
+
+  async recomputeAccountArr(accountId: string): Promise<void> {
+    const db = getMongo()
+    const sales = await db.collection('Sales').find({ account_id: accountId }).toArray()
+    const total = computeArrFromSales(sales)
+    await db.collection('Accounts').updateOne(
+      { _id: new ObjectId(accountId) },
+      { $set: { 'ARR (€)': String(total) } }
+    )
+    invalidateCache()
   },
 
   async createAccount(data: {

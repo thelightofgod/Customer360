@@ -47,6 +47,8 @@ export interface SubscriptionDetail {
   commitment_end_date?: string | null
   invoice_date?: string | null
   payment_periods?: Array<{ period_start: string; period_end: string; amount: number }> | null
+  lisans_turu?: 'yeni' | 'ek' | null
+  sale_id?: string | null
 }
 
 export interface PaymentSchedule {
@@ -167,6 +169,52 @@ export interface AccountDetail extends Account {
   subscriptions: SubscriptionDetail[]
   notes?: string
   payment_schedules: PaymentSchedule[]
+}
+
+export interface SalePeriod {
+  baslangic: string
+  bitis: string
+  tutar: string
+}
+
+export interface Sale {
+  id: string
+  firma_adi: string
+  firma_adresi: string | null
+  kontak_adi: string | null
+  kontak_gorevi: string | null
+  kontak_email: string | null
+  finans_kontak_adi: string | null
+  finans_kontak_gorevi: string | null
+  finans_kontak_email: string | null
+  lisans_turu: 'yeni' | 'ek'
+  yil_sayisi: string | null
+  musteri_liste_bedeli_yeni: string | null
+  indirimli_musteri_bedeli_yeni: string | null
+  musteri_liste_bedeli_ek: string | null
+  indirimli_musteri_bedeli_ek: string | null
+  taahhut_bitis_tarihi: string | null
+  kalan_ay: string | null
+  kalan_donem_net_tutar: string | null
+  urunler: Record<string, string>
+  partner: string | null
+  partner_marj: string | null
+  partner_lisans_bedeli: string | null
+  kur: string | null
+  fatura_tarihi: string | null
+  odeme_vadesi: string | null
+  danismanlik_adam_gun: string | null
+  egitim: string | null
+  not: string | null
+  lisans_periodlari: SalePeriod[] | null
+  contacts: Array<{ name: string; role: string; contact_type: string; email: string }> | null
+  account_id: string | null
+  deal_id: string | null
+  subscription_ids: string[] | null
+  annual_value_eur: number | null
+  total_value_eur: number | null
+  created_at: string
+  created_by: string | null
 }
 
 export interface AccountSummaryStats {

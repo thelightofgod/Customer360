@@ -5,6 +5,7 @@ import AccountDetailPage from '@/pages/AccountDetailPage'
 import SubscriptionsPage from '@/pages/SubscriptionsPage'
 import ContactsPage from '@/pages/ContactsPage'
 import ActivityPage from '@/pages/ActivityPage'
+import SalesPage from '@/pages/SalesPage'
 import LoginPage from '@/pages/LoginPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
             <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/activity" element={<ActivityPage />} />
+            <Route path="/sales" element={<SalesPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}

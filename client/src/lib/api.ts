@@ -1,4 +1,4 @@
-import type { Account, AccountDetail, AccountSummaryStats, Contact, Activity, Ticket, SubscriptionDetail, Product, Deal, AuditLog } from '@/types'
+import type { Account, AccountDetail, AccountSummaryStats, Contact, Activity, Ticket, SubscriptionDetail, Product, Deal, AuditLog, Sale } from '@/types'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path)
@@ -104,6 +104,22 @@ export const api = {
       ).toString()
       return get<{ logs: AuditLog[]; total: number }>(`/api/audit-logs${q ? '?' + q : ''}`)
     },
+  },
+  sales: {
+    list: (params?: { search?: string; page?: number; limit?: number; lisans_turu?: string }) => {
+      const q = new URLSearchParams(
+        Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v != null && v !== '')) as Record<string, string>
+      ).toString()
+      return get<{ sales: Sale[]; total: number }>(`/api/sales${q ? '?' + q : ''}`)
+    },
+    get: (id: string) => get<Sale>(`/api/sales/${id}`),
+    create: (body: Record<string, unknown>) => post('/api/sales', body),
+    update: (id: string, body: Record<string, unknown>) =>
+      fetch(`/api/sales/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),
+    delete: (id: string) =>
+      fetch(`/api/sales/${id}`, { method: 'DELETE' })
+        .then(r => r.ok ? r.json() : r.json().then((e: any) => Promise.reject(e.error))),
   },
   paymentSchedules: {
     create: (body: Record<string, unknown>) => post('/api/payment-schedules', body),

@@ -13,7 +13,7 @@ interface Props {
   initialData?: Contact
 }
 
-const TYPES = ['sponsor', 'technical', 'business', 'admin', 'general']
+const TYPES = ['sponsor', 'technical', 'business', 'admin', 'financial', 'general']
 const selectClass = 'h-9 w-full rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)] px-3 text-sm text-[var(--t1)] focus:outline-none focus:border-[var(--blue)] transition-colors appearance-none cursor-pointer'
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {

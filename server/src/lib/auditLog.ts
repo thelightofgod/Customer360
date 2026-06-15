@@ -1,7 +1,7 @@
 import { getMongo } from '../db/mongo'
 
 export type AuditAction = 'create' | 'update' | 'delete'
-export type AuditEntityType = 'account' | 'contact' | 'subscription' | 'deal' | 'payment_schedule'
+export type AuditEntityType = 'account' | 'contact' | 'subscription' | 'deal' | 'payment_schedule' | 'sale'
 
 // Maps camelCase req.body key → { mongo field name, human-readable label }
 export type FieldMap = Record<string, { mongo: string; label: string }>
