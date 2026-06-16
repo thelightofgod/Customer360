@@ -511,6 +511,8 @@ export const mongoRepository = {
   ): Promise<{ contacts: Contact[]; total: number }> {
     const { accounts: rawAccounts, contacts: rawContacts } = await getRawCollections()
 
+    const accountNameToId = new Map(rawAccounts.map(a => [a['Account Name'] as string, a._id.toHexString()]))
+
     let accountName: string | undefined
     if (accountId) {
       const acct = rawAccounts.find(a => {
@@ -524,7 +526,7 @@ export const mongoRepository = {
       .filter(c => !accountName || c['Account Name'] === accountName)
       .map(c => ({
         id: c._id.toHexString(),
-        account_id: accountId || '',
+        account_id: accountId || accountNameToId.get(c['Account Name'] as string) || '',
         account_name: c['Account Name'] || '',
         name: c['Contact Name'] || '',
         role: c['Role / Title'] || '',
@@ -578,11 +580,11 @@ export const mongoRepository = {
     })
 
     if (search) {
-      const s = search.toLowerCase()
+      const s = trNorm(search)
       results = results.filter(sub =>
-        (sub.product_name || '').toLowerCase().includes(s) ||
-        (sub.account_name || '').toLowerCase().includes(s) ||
-        (sub.category || '').toLowerCase().includes(s)
+        trNorm(sub.product_name || '').includes(s) ||
+        trNorm(sub.account_name || '').includes(s) ||
+        trNorm(sub.category || '').includes(s)
       )
     }
 
@@ -801,6 +803,7 @@ export const mongoRepository = {
       await Promise.all([
         db.collection('Contacts').deleteMany({ 'Account Name': name }),
         db.collection('Subscriptions').deleteMany({ 'Account Name': name }),
+        db.collection('Sales').deleteMany({ account_id: id }),
       ])
       invalidateCache()
     }
@@ -844,13 +847,15 @@ export const mongoRepository = {
   async getSales(search = '', page = 1, limit = 40, lisansTuru = ''): Promise<{ sales: Sale[]; total: number }> {
     const db = getMongo()
     const filter: Record<string, unknown> = {}
-    if (search) filter.firma_adi = { $regex: search, $options: 'i' }
     if (lisansTuru) filter.lisans_turu = lisansTuru
-    const [total, docs] = await Promise.all([
-      db.collection('Sales').countDocuments(filter),
-      db.collection('Sales').find(filter).sort({ created_at: -1 }).skip((page - 1) * limit).limit(limit).toArray(),
-    ])
-    return { sales: docs.map(docToSale), total }
+    let docs = await db.collection('Sales').find(filter).sort({ created_at: -1 }).toArray()
+    if (search) {
+      const s = trNorm(search)
+      docs = docs.filter(d => trNorm(d.firma_adi || '').includes(s))
+    }
+    const total = docs.length
+    const start = (page - 1) * limit
+    return { sales: docs.slice(start, start + limit).map(docToSale), total }
   },
 
   async getSale(id: string): Promise<Sale | null> {

@@ -56,8 +56,11 @@ export default function SubscriptionsPage() {
   }
 
   function annualValue(s: SubscriptionDetail): number {
-    if (s.payment_periods && s.payment_periods.length > 0)
-      return s.payment_periods.reduce((sum, p) => sum + p.amount, 0)
+    if (s.payment_periods && s.payment_periods.length > 0) {
+      const total = s.payment_periods.reduce((sum, p) => sum + p.amount, 0)
+      const years = s.subscription_years ?? s.payment_periods.length
+      return years > 0 ? total / years : total
+    }
     return s.total_price
   }
 

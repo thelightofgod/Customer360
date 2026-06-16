@@ -19,7 +19,8 @@
       "Bash(Sort-Object FullName)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Acer\\\\Desktop\\\\customer360\\\\sales-register\" -File | Where-Object { $_.Name -notlike \"package-lock.json\" })",
       "Bash(ping -n 5 127.0.0.1)",
-      "PowerShell(Get-NetTCPConnection *)"
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(xargs grep -l \"interface.*SubscriptionDetail\\\\|type.*SubscriptionDetail\")"
     ]
   }
 }

@@ -12,7 +12,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const now = new Date()
   const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`
 
-  const initials = email ? email.split('.').map(p => p[0]?.toUpperCase()).join('').slice(0, 2) : 'U'
+  const initials = email ? (email.split('@')[0].split('.').map(p => p[0]?.toUpperCase()).join('').slice(0, 2) || 'U') : 'U'
   const displayName = email ? email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') : ''
 
   const navLinks = [

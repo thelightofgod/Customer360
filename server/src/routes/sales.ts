@@ -140,7 +140,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       }))
 
     const dealId = await repo.createDeal({
-      accountName: firma_adi,
+      accountName: canonicalName,
       dealType: lisans_turu === 'yeni' ? 'New Sale' : 'Add-on',
       dealStatus: 'Closed Won',
       contractStart: fatura_tarihi || undefined,
@@ -180,7 +180,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
       const qty = parseInt(qtyStr) || 0
       if (qty <= 0) continue
       const subId = await repo.createSubscription({
-        accountName: firma_adi,
+        accountName: canonicalName,
         productName,
         quantity: qty,
         unit: 'User',
@@ -240,6 +240,19 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
       ? (periods.length > 0 ? periods[periods.length - 1].bitis : undefined)
       : (taahhut_bitis_tarihi || undefined)
 
+    const incomingAccountId = typeof req.body.account_id === 'string' && ObjectId.isValid(req.body.account_id)
+      ? req.body.account_id as string
+      : undefined
+    const effectiveAccountId = incomingAccountId || existing.account_id
+
+    const patchAccountDoc = effectiveAccountId
+      ? await getMongo().collection('Accounts').findOne(
+          { _id: new ObjectId(effectiveAccountId) },
+          { projection: { 'Account Name': 1 } }
+        )
+      : null
+    const canonicalName: string = patchAccountDoc?.['Account Name'] || firma_adi
+
     // Update linked Deal
     if (existing.deal_id) {
       const financialContact = Array.isArray(contactsArr)
@@ -259,7 +272,7 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
         }))
 
       await repo.updateDeal(existing.deal_id, {
-        accountName: firma_adi,
+        accountName: canonicalName,
         dealType: lisans_turu === 'yeni' ? 'New Sale' : 'Add-on',
         dealStatus: 'Closed Won',
         contractStart: fatura_tarihi || undefined,
@@ -290,11 +303,12 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
 
     // Rebuild Subscriptions: delete by Sale ID then recreate from updated urunler
     await getMongo().collection('Subscriptions').deleteMany({ 'Sale ID': req.params.id })
+    const newSubscriptionIds: string[] = []
     for (const [productName, qtyStr] of Object.entries((urunler as Record<string, string>) || {})) {
       const qty = parseInt(qtyStr) || 0
       if (qty <= 0) continue
-      await repo.createSubscription({
-        accountName: firma_adi,
+      const subId = await repo.createSubscription({
+        accountName: canonicalName,
         productName,
         quantity: qty,
         unit: 'User',
@@ -310,17 +324,11 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
           amount: toNum(p.tutar),
         })),
       })
+      newSubscriptionIds.push(subId)
     }
+    await repo.updateSale(req.params.id, { subscription_ids: newSubscriptionIds })
 
     // Sync contacts: create new ones, skip existing_id refs and name-duplicates
-    const patchAccountDoc = existing.account_id
-      ? await getMongo().collection('Accounts').findOne(
-          { _id: new ObjectId(existing.account_id) },
-          { projection: { 'Account Name': 1 } }
-        )
-      : null
-    const canonicalName: string = patchAccountDoc?.['Account Name'] || firma_adi
-
     const patchContacts = (Array.isArray(contactsArr)
       ? (contactsArr as Array<{ name: string; role: string; contact_type: string; email: string; existing_id?: string | null }>)
       : []
@@ -343,7 +351,10 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
       }
     }
 
-    if (existing.account_id) await repo.recomputeAccountArr(existing.account_id)
+    if (effectiveAccountId) await repo.recomputeAccountArr(effectiveAccountId)
+    if (incomingAccountId && existing.account_id && incomingAccountId !== existing.account_id) {
+      await repo.recomputeAccountArr(existing.account_id)
+    }
     logActivity(req.userEmail!, 'update', 'sale', req.params.id, existing.firma_adi)
     res.json({ ok: true })
   } catch (e) {

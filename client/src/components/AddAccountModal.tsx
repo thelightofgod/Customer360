@@ -112,7 +112,7 @@ export default function AddAccountModal({ onClose, onCreated, initialData }: Pro
               {isEdit ? `Editing ${initialData!.name}` : 'Add a new customer or prospect'}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--t1)] hover:bg-[var(--bg3)] transition-colors">
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-[var(--t1)] hover:bg-[var(--bg3)] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>

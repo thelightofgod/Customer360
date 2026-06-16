@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
 import { toast } from '@/lib/toast'
+import { trNorm } from '@/lib/utils'
 import type { Account, Contact } from '@/types'
 
 interface Props {
@@ -64,11 +65,12 @@ export default function AddContactModal({ onClose, onSaved, prefilledAccount, in
     setForm(f => ({ ...f, [field]: value }))
   }
 
-  const filteredContacts = allContacts.filter(c =>
-    c.name.toLowerCase().includes(contactSearch.toLowerCase()) ||
-    (c.role || '').toLowerCase().includes(contactSearch.toLowerCase()) ||
-    (c.account_name || '').toLowerCase().includes(contactSearch.toLowerCase())
-  )
+  const filteredContacts = allContacts.filter(c => {
+    const s = trNorm(contactSearch)
+    return trNorm(c.name).includes(s) ||
+      trNorm(c.role || '').includes(s) ||
+      trNorm(c.account_name || '').includes(s)
+  })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

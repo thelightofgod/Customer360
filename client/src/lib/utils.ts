@@ -5,6 +5,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function trNorm(s: string): string {
+  return s.toLocaleLowerCase('tr')
+    .replace(/ş/g, 's').replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u').replace(/ö/g, 'o')
+    .replace(/ı/g, 'i').replace(/ç/g, 'c')
+}
+
 export function daysUntil(dateStr: string | null | undefined): number | null {
   if (!dateStr) return null
   return Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / 86400000)
