@@ -2,56 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from '@/lib/toast'
-import type { Sale, SalePeriod, Account, Contact } from '@/types'
-
-// ── Product lists ─────────────────────────────────────────────────────────────
-const PRODUCTS_ON_PREM = [
-  'Qlik Sense Enterprise Professional User',
-  'Qlik Sense Enterprise Analyzer User',
-  'Qlik Sense Enterprise Analyzer Capacity',
-  'Qlik Sense Enterprise Core based Site Subscription (4x Core)',
-  'Additional No of Cores for QSE core based Site Subscription',
-  'Qlik Analytics Platform External Edition Subscription (4x Core)',
-  'Additional No of CPU Cores Subscription',
-  'Qlik NPrinting Server Subscription (Sınırsız Kullanıcı)',
-  'Qlik NPrinting SMB Server Subscription (Max 250 Kullanıcı)',
-  'Qlik Connector powered by SAP NetWeaver Subscription',
-  'Qlik Insight Advisor Chat',
-  'Qlik Alerting',
-  'Qlik Alerting SMB',
-]
-const PRODUCTS_SAAS = [
-  'Qlik Cloud Full User (SAAS)',
-  'Qlik Sense SaaS Enterprise Analyzer User',
-  'Qlik Cloud Analytics Starter (10 Full Users Included) (25 Gb Data Pack)',
-  'Qlik Cloud Analytics Standart (25 Gb Data Pack)',
-  'Qlik Cloud Analytics Premium (25 Gb Data Pack)',
-  'Qlik Cloud Analytics Premium (50 Gb Data Pack)',
-  'Qlik Cloud Analytics Premium (250 Gb Data Pack)',
-  'Qlik Cloud Analytics Enterprise (250 Gb Data Pack)',
-  'Large App. (20 gb)',
-  'Large App. (100 gb)',
-  'Reporting Services Startup (10000 Report)',
-  'Reporting Services Scale Up (50000 Report)',
-  'App. Automation Startup (1000 3rd Party Runs)',
-  'App. Automation Startup (5000 3rd Party Runs)',
-  'App. Automation Startup (10000 3rd Party Runs)',
-  'Auto ML Startup (5 Deployed Model)',
-  'Auto ML Scale Up (10 Deployed Model)',
-  'Auto ML Scale Up (20 Deployed Model)',
-]
-const PRODUCTS_ANSWERS = [
-  'Qlik Cloud Analytics or Qlik Sense Enterprise - Qlik Answers (Base Pack)',
-  'Qlik Cloud Analytics or Qlik Sense Enterprise - Qlik Answers (10,000 Questions Pack)',
-  'Qlik Cloud Analytics or Qlik Sense Enterprise - Qlik Answers (25,000 Questions Pack)',
-  'Qlik Cloud Analytics or Qlik Sense Enterprise - Qlik Answers (50,000 Pages Indexed Pack)',
-  'Overage for Qlik Answers (2,000 Questions)',
-]
-const PRODUCT_TABS = [
-  { key: 'onprem', label: 'On Prem', list: PRODUCTS_ON_PREM },
-  { key: 'saas', label: 'SaaS', list: PRODUCTS_SAAS },
-  { key: 'answers', label: 'Answers', list: PRODUCTS_ANSWERS },
-]
+import type { Sale, SalePeriod, Account, Contact, Product } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function addYears(iso: string, n: number): string {
@@ -104,6 +55,7 @@ const EMPTY = {
   musteri_liste_bedeli_ek: '', indirimli_musteri_bedeli_ek: '',
   taahhut_bitis_tarihi: '', kalan_ay: '', kalan_donem_net_tutar: '',
   urunler: {} as Record<string, string>,
+  productPrices: {} as Record<string, { listPrice: string; unitPrice: string; hasDiscount: boolean; discountedPrice: string }>,
   partner: '', partner_marj: '', partner_lisans_bedeli: '', kur: '',
   fatura_tarihi: '', odeme_vadesi: '30 Gün',
   danismanlik_adam_gun: '', egitim: '', not: '',
@@ -357,6 +309,7 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
       kalan_ay: s(initialData.kalan_ay),
       kalan_donem_net_tutar: s(initialData.kalan_donem_net_tutar),
       urunler: initialData.urunler || {},
+      productPrices: {},
       partner: s(initialData.partner),
       partner_marj: s(initialData.partner_marj),
       partner_lisans_bedeli: s(initialData.partner_lisans_bedeli),
@@ -380,8 +333,16 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
   const [accountResults, setAccountResults] = useState<Account[]>([])
   const [accountDropOpen, setAccountDropOpen] = useState(false)
 
-  const [productTab, setProductTab] = useState('onprem')
+  const [products, setProducts] = useState<Product[]>([])
+  const [productTab, setProductTab] = useState('')
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    api.products.list().then(d => {
+      setProducts(d.products)
+      if (!productTab && d.products.length > 0) setProductTab(d.products[0].product_group)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (accountMode !== 'existing' || selectedAccountId || !accountSearch.trim()) {
@@ -399,24 +360,68 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
 
   const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }))
   const setUrun = (name: string, val: string) => setForm(f => ({ ...f, urunler: { ...f.urunler, [name]: val } }))
+  type PriceEntry = { listPrice: string; unitPrice: string; hasDiscount: boolean; discountedPrice: string }
+
+  function setProductField(name: string, field: keyof PriceEntry, val: string | boolean) {
+    setForm(f => {
+      const cur: PriceEntry = f.productPrices[name] ?? { listPrice: '', unitPrice: '', hasDiscount: false, discountedPrice: '' }
+      let next = { ...cur, [field]: val }
+      if (field === 'hasDiscount') {
+        if (val) { next.discountedPrice = cur.unitPrice }
+        else { next.unitPrice = cur.listPrice; next.discountedPrice = '' }
+      }
+      if (field === 'discountedPrice') next.unitPrice = val as string
+      if (field === 'listPrice' && !cur.hasDiscount) next.unitPrice = val as string
+      return { ...f, productPrices: { ...f.productPrices, [name]: next } }
+    })
+  }
+
+  function toggleProduct(p: Product) {
+    const hasQty = parseInt(form.urunler[p.name] || '0') > 0
+    setForm(f => ({
+      ...f,
+      urunler: { ...f.urunler, [p.name]: hasQty ? '0' : '1' },
+      productPrices: hasQty ? f.productPrices : {
+        ...f.productPrices,
+        [p.name]: f.productPrices[p.name] ?? { listPrice: String(p.list_price || ''), unitPrice: String(p.list_price || ''), hasDiscount: false, discountedPrice: '' },
+      },
+    }))
+  }
 
   const addContact = () => setForm(f => ({ ...f, contacts: [...f.contacts, { ...EMPTY_CONTACT }] }))
   const removeContact = (i: number) => setForm(f => ({ ...f, contacts: f.contacts.filter((_, idx) => idx !== i) }))
   const updateContact = (i: number, update: Partial<SaleContact>) =>
     setForm(f => ({ ...f, contacts: f.contacts.map((c, idx) => idx === i ? { ...c, ...update } : c) }))
 
+  const allSelected = Object.entries(form.urunler).filter(([, v]) => parseInt(v) > 0)
+
+  const computedAnnualTotal = useMemo(() =>
+    allSelected.reduce((sum, [name, qty]) => {
+      const price = parseFloat(form.productPrices[name]?.unitPrice || '0') || 0
+      return sum + (parseInt(qty) || 0) * price
+    }, 0)
+  , [allSelected, form.productPrices])
+
+  const computedListTotal = useMemo(() =>
+    allSelected.reduce((sum, [name, qty]) => {
+      const price = parseFloat(form.productPrices[name]?.listPrice || '0') || 0
+      return sum + (parseInt(qty) || 0) * price
+    }, 0)
+  , [allSelected, form.productPrices])
+
   const periods: SalePeriod[] = useMemo(() => {
     if (form.lisans_turu !== 'yeni' || !form.fatura_tarihi || !form.yil_sayisi) return []
     const n = parseInt(form.yil_sayisi) || 0
+    const tutar = computedAnnualTotal > 0 ? String(computedAnnualTotal) : ''
     return Array.from({ length: n }, (_, i) => ({
       baslangic: addYears(form.fatura_tarihi, i),
       bitis: subDay(addYears(form.fatura_tarihi, i + 1)),
-      tutar: form.indirimli_musteri_bedeli_yeni || '',
+      tutar,
     }))
-  }, [form.lisans_turu, form.fatura_tarihi, form.yil_sayisi, form.indirimli_musteri_bedeli_yeni])
+  }, [form.lisans_turu, form.fatura_tarihi, form.yil_sayisi, computedAnnualTotal])
 
-  const activeProducts = PRODUCT_TABS.find(t => t.key === productTab)?.list ?? []
-  const allSelected = Object.entries(form.urunler).filter(([, v]) => parseInt(v) > 0)
+  const productGroups = [...new Set(products.map(p => p.product_group).filter(Boolean))]
+  const activeProducts = products.filter(p => p.product_group === productTab)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -424,8 +429,15 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
     if (accountMode === 'new' && !form.firma_adi.trim()) { toast.error('Company name is required'); return }
     setSaving(true)
     try {
+      const totalStr = computedAnnualTotal > 0 ? String(computedAnnualTotal) : ''
+      const listStr = computedListTotal > 0 ? String(computedListTotal) : ''
       const payload = {
         ...form,
+        musteri_liste_bedeli_yeni: listStr,
+        indirimli_musteri_bedeli_yeni: totalStr,
+        musteri_liste_bedeli_ek: listStr,
+        indirimli_musteri_bedeli_ek: totalStr,
+        urunler_fiyatlari: form.productPrices,
         lisans_periodlari: periods.length > 0 ? periods : null,
         ...(accountMode === 'existing' && selectedAccountId ? { account_id: selectedAccountId } : {}),
       }
@@ -483,7 +495,7 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
                         key={m} type="button"
                         onClick={() => {
                           setAccountMode(m)
-                          if (m === 'new') { setSelectedAccountId(null); setAccountSearch('') }
+                          if (m === 'new') { setSelectedAccountId(null); setAccountSearch(''); set('lisans_turu', 'yeni') }
                         }}
                         className="flex-1 px-3 py-1 rounded-[6px] text-xs font-semibold transition-all"
                         style={accountMode === m
@@ -597,8 +609,11 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
                   <div className="flex gap-1 p-0.5 rounded-[8px]" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}>
                     {([['yeni', 'New License'], ['ek', 'Add-on License']] as [string, string][]).map(([v, l]) => (
                       <button
-                        key={v} type="button" onClick={() => set('lisans_turu', v)}
-                        className="px-3 py-1 rounded-[6px] text-xs font-semibold transition-all"
+                        key={v} type="button"
+                        onClick={() => set('lisans_turu', v)}
+                        disabled={v === 'ek' && accountMode === 'new'}
+                        title={v === 'ek' && accountMode === 'new' ? 'Add-on requires an existing account' : undefined}
+                        className="px-3 py-1 rounded-[6px] text-xs font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                         style={form.lisans_turu === v
                           ? { background: v === 'yeni' ? 'rgba(5,150,105,0.3)' : 'rgba(14,165,233,0.25)', color: v === 'yeni' ? '#34d399' : '#38bdf8', border: `1px solid ${v === 'yeni' ? 'rgba(5,150,105,0.4)' : 'rgba(14,165,233,0.3)'}` }
                           : { color: 'var(--t4)', border: '1px solid transparent' }}
@@ -616,19 +631,15 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
                         onChange={e => set('yil_sayisi', e.target.value)} placeholder="3"
                       />
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--t4)]">List License Price</label>
-                      <input className={inputCls} value={form.musteri_liste_bedeli_yeni} onChange={e => set('musteri_liste_bedeli_yeni', e.target.value)} placeholder="9.900,00 €" />
+                    <div className="flex items-center justify-between h-10 px-4 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <span className="text-xs text-[var(--t4)]">List Total</span>
+                      <span className="text-sm font-mono text-[var(--t2)]">{computedListTotal > 0 ? `€${computedListTotal.toLocaleString('de-DE')}` : '—'}</span>
                     </div>
                     <div className="flex items-center justify-between h-12 px-4 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)' }}>
                       <span className="text-sm text-[var(--t3)]">Annual Total</span>
-                      <input
-                        className="text-right bg-transparent border-none outline-none text-base font-bold w-36"
-                        style={{ color: '#34d399' }}
-                        value={form.indirimli_musteri_bedeli_yeni}
-                        onChange={e => set('indirimli_musteri_bedeli_yeni', e.target.value)}
-                        placeholder="€0"
-                      />
+                      <span className="text-base font-bold font-mono" style={{ color: computedAnnualTotal > 0 ? '#34d399' : 'var(--t4)' }}>
+                        {computedAnnualTotal > 0 ? `€${computedAnnualTotal.toLocaleString('de-DE')}` : '—'}
+                      </span>
                     </div>
                     {periods.length > 0 ? (
                       <div className="rounded-[10px] overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -655,11 +666,15 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-3">
-                    <Field label="List License Price" half>
-                      <input className={inputCls} value={form.musteri_liste_bedeli_ek} onChange={e => set('musteri_liste_bedeli_ek', e.target.value)} placeholder="0,00 €" />
+                    <Field label="List Total" half>
+                      <div className="h-9 flex items-center px-3 rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)]/50 text-sm font-mono text-[var(--t2)]">
+                        {computedListTotal > 0 ? `€${computedListTotal.toLocaleString('de-DE')}` : '—'}
+                      </div>
                     </Field>
                     <Field label="Annual Total" half>
-                      <input className={inputCls} value={form.indirimli_musteri_bedeli_ek} onChange={e => set('indirimli_musteri_bedeli_ek', e.target.value)} placeholder="0,00 €" />
+                      <div className="h-9 flex items-center px-3 rounded-[10px] border border-[var(--brd)] bg-[var(--bg3)]/50 text-sm font-mono font-bold" style={{ color: computedAnnualTotal > 0 ? '#34d399' : 'var(--t4)' }}>
+                        {computedAnnualTotal > 0 ? `€${computedAnnualTotal.toLocaleString('de-DE')}` : '—'}
+                      </div>
                     </Field>
                     <Field label="Commitment End Date" half>
                       <input type="date" className={inputCls} value={form.taahhut_bitis_tarihi} onChange={e => set('taahhut_bitis_tarihi', e.target.value)} />
@@ -728,17 +743,19 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
                   <span className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: '#f59e0b' }}>Products</span>
                 </div>
 
-                <div className="flex gap-1 p-0.5 rounded-[8px] mb-3" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  {PRODUCT_TABS.map(t => (
-                    <button
-                      key={t.key} type="button" onClick={() => setProductTab(t.key)}
-                      className="flex-1 text-center py-1.5 rounded-[6px] text-[11px] font-semibold transition-all"
-                      style={productTab === t.key
-                        ? { background: 'rgba(245,158,11,0.2)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.35)' }
-                        : { color: 'var(--t4)', border: '1px solid transparent' }}
-                    >{t.label}</button>
-                  ))}
-                </div>
+                {productGroups.length > 0 && (
+                  <div className="flex gap-1 p-0.5 rounded-[8px] mb-3" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    {productGroups.map(g => (
+                      <button
+                        key={g} type="button" onClick={() => setProductTab(g)}
+                        className="flex-1 text-center py-1.5 rounded-[6px] text-[11px] font-semibold transition-all"
+                        style={productTab === g
+                          ? { background: 'rgba(245,158,11,0.2)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.35)' }
+                          : { color: 'var(--t4)', border: '1px solid transparent' }}
+                      >{g}</button>
+                    ))}
+                  </div>
+                )}
 
                 {allSelected.length > 0 && (
                   <div className="mb-3 p-2.5 rounded-[8px]" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
@@ -755,32 +772,78 @@ export default function AddSaleModal({ initialData, onClose, onSaved }: Props) {
                 )}
 
                 <div className="flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: 440 }}>
-                  {activeProducts.map(name => {
-                    const qty = form.urunler[name] || ''
-                    const hasQty = qty && qty !== '0'
+                  {products.length === 0 && (
+                    <div className="text-center py-8 text-[11px] text-[var(--t4)]">Loading products…</div>
+                  )}
+                  {activeProducts.map(p => {
+                    const qty = form.urunler[p.name] || ''
+                    const hasQty = !!(qty && qty !== '0')
+                    const pp = form.productPrices[p.name]
+                    const listPrice = pp?.listPrice || ''
+                    const hasDiscount = pp?.hasDiscount || false
+                    const discountedPrice = pp?.discountedPrice || ''
+                    const listNum = parseFloat(listPrice) || 0
+                    const discNum = parseFloat(discountedPrice) || 0
+                    const discPct = hasDiscount && listNum > 0 && discNum > 0 && discNum < listNum
+                      ? Math.round((1 - discNum / listNum) * 1000) / 10
+                      : null
                     return (
-                      <div
-                        key={name}
-                        className="flex items-center gap-2 px-2.5 py-2 rounded-[8px] transition-all"
-                        style={{
-                          background: hasQty ? 'rgba(245,158,11,0.07)' : 'transparent',
-                          border: `1px solid ${hasQty ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.04)'}`,
-                        }}
-                      >
-                        <span className="flex-1 text-[11px] leading-snug" style={{ color: hasQty ? '#fde68a' : 'var(--t4)' }}>{name}</span>
-                        <input
-                          type="number" min="0"
-                          value={qty}
-                          onChange={e => setUrun(name, e.target.value)}
-                          placeholder="—"
-                          className="w-12 rounded-[6px] text-center text-xs font-mono focus:outline-none transition-colors"
-                          style={{
-                            background: hasQty ? 'rgba(245,158,11,0.1)' : 'rgba(0,0,0,0.3)',
-                            border: `1px solid ${hasQty ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.07)'}`,
-                            color: hasQty ? '#fbbf24' : 'var(--t4)',
-                            padding: '3px 0',
-                          }}
-                        />
+                      <div key={p.id} className="flex flex-col gap-1 px-2.5 py-2 rounded-[8px] transition-all"
+                        style={{ background: hasQty ? 'rgba(245,158,11,0.07)' : 'transparent', border: `1px solid ${hasQty ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.04)'}` }}>
+                        <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => toggleProduct(p)}>
+                          <span className="flex-1 text-[11px] leading-snug min-w-0 truncate" style={{ color: hasQty ? '#fde68a' : 'var(--t4)' }}>{p.name}</span>
+                          <input
+                            type="number" min="0" value={qty}
+                            onClick={e => e.stopPropagation()}
+                            onChange={e => setUrun(p.name, e.target.value)}
+                            placeholder="—"
+                            className="w-10 rounded-[6px] text-center text-xs font-mono focus:outline-none flex-shrink-0"
+                            style={{ background: hasQty ? 'rgba(245,158,11,0.1)' : 'rgba(0,0,0,0.3)', border: `1px solid ${hasQty ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.07)'}`, color: hasQty ? '#fbbf24' : 'var(--t4)', padding: '3px 0' }}
+                          />
+                        </div>
+                        {hasQty && (
+                          <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number" min="0" value={listPrice}
+                                onChange={e => setProductField(p.name, 'listPrice', e.target.value)}
+                                placeholder="List €"
+                                className="flex-1 rounded-[6px] text-center text-xs font-mono focus:outline-none"
+                                style={{
+                                  background: 'rgba(0,0,0,0.25)',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                  color: hasDiscount ? 'var(--t4)' : '#34d399',
+                                  padding: '3px 0',
+                                  textDecoration: hasDiscount ? 'line-through' : 'none',
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setProductField(p.name, 'hasDiscount', !hasDiscount)}
+                                className="text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 transition-all"
+                                style={hasDiscount
+                                  ? { background: 'rgba(251,191,36,0.2)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)' }
+                                  : { background: 'rgba(255,255,255,0.05)', color: 'var(--t4)', border: '1px solid rgba(255,255,255,0.08)' }}
+                              >İndirim</button>
+                            </div>
+                            {hasDiscount && (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number" min="0" value={discountedPrice}
+                                  onChange={e => setProductField(p.name, 'discountedPrice', e.target.value)}
+                                  placeholder="İndirimli €"
+                                  className="flex-1 rounded-[6px] text-center text-xs font-mono font-bold focus:outline-none"
+                                  style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.35)', color: '#34d399', padding: '4px 0' }}
+                                />
+                                {discPct !== null && (
+                                  <span className="text-[11px] font-bold flex-shrink-0 px-1.5 py-0.5 rounded-[4px]" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}>
+                                    -{discPct}%
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )
                   })}

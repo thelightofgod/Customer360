@@ -175,16 +175,22 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
     const commitmentEnd = lisans_turu === 'yeni'
       ? (periods.length > 0 ? periods[periods.length - 1].bitis : undefined)
       : (taahhut_bitis_tarihi || undefined)
+    const urunler_fiyatlari = (req.body.urunler_fiyatlari || {}) as Record<string, { listPrice: number; unitPrice: number }>
 
     for (const [productName, qtyStr] of Object.entries((urunler as Record<string, string>) || {})) {
       const qty = parseInt(qtyStr) || 0
       if (qty <= 0) continue
+      const prices = urunler_fiyatlari[productName]
+      const listPrice = prices ? toNum(prices.listPrice) : null
+      const unitPrice = prices ? toNum(prices.unitPrice) : 0
+      const annualAmount = qty * unitPrice
       const subId = await repo.createSubscription({
         accountName: canonicalName,
         productName,
         quantity: qty,
         unit: 'User',
-        unitPrice: 0,
+        listPrice,
+        unitPrice,
         subscriptionYears: yil_sayisi ? parseInt(yil_sayisi) || null : null,
         commitmentEndDate: commitmentEnd,
         invoiceDate: fatura_tarihi || null,
@@ -193,7 +199,7 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
         paymentPeriods: periods.map(p => ({
           periodStart: p.baslangic,
           periodEnd: p.bitis,
-          amount: toNum(p.tutar),
+          amount: annualAmount,
         })),
       })
       subscriptionIds.push(subId)
@@ -304,15 +310,21 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
     // Rebuild Subscriptions: delete by Sale ID then recreate from updated urunler
     await getMongo().collection('Subscriptions').deleteMany({ 'Sale ID': req.params.id })
     const newSubscriptionIds: string[] = []
+    const patchFiyatlari = (merged.urunler_fiyatlari || {}) as Record<string, { listPrice: number; unitPrice: number }>
     for (const [productName, qtyStr] of Object.entries((urunler as Record<string, string>) || {})) {
       const qty = parseInt(qtyStr) || 0
       if (qty <= 0) continue
+      const prices = patchFiyatlari[productName]
+      const listPrice = prices ? toNum(prices.listPrice) : null
+      const unitPrice = prices ? toNum(prices.unitPrice) : 0
+      const annualAmount = qty * unitPrice
       const subId = await repo.createSubscription({
         accountName: canonicalName,
         productName,
         quantity: qty,
         unit: 'User',
-        unitPrice: 0,
+        listPrice,
+        unitPrice,
         subscriptionYears: yil_sayisi ? parseInt(yil_sayisi) || null : null,
         commitmentEndDate: commitmentEnd,
         invoiceDate: fatura_tarihi || null,
@@ -321,7 +333,7 @@ router.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction)
         paymentPeriods: periods.map(p => ({
           periodStart: p.baslangic,
           periodEnd: p.bitis,
-          amount: toNum(p.tutar),
+          amount: annualAmount,
         })),
       })
       newSubscriptionIds.push(subId)
